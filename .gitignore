@@ -1,0 +1,24 @@
+# Dependencies
+**/target/
+**/build/
+**/.dart_tool/
+**/Pods/
+**/.gradle/
+Cargo.lock
+
+# Environment
+.env
+*.env.local
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
