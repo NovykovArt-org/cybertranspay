@@ -1,66 +1,35 @@
-# Enable required APIs
-resource "google_project_service" "enabled_services" {
-  for_each = toset([
-    "container.googleapis.com",
-    "run.googleapis.com",
-    "artifactregistry.googleapis.com",
-    "aiplatform.googleapis.com",
-    "secretmanager.googleapis.com",
-    "iam.googleapis.com",
-    "cloudbuild.googleapis.com"
-  ])
-  project = var.project_id
-  service = each.key
+# Main Terraform Configuration
+terraform {
+  required_version = ">= 1.9.0"
 }
 
-# Artifact Registry
-resource "google_artifact_registry_repository" "main" {
-  location      = var.region
-  repository_id = "cybertranspay"
-  description   = "CyberTransPay Docker repository"
-  format        = "DOCKER"
+module "artifact_registry" {
+  source = "./modules/artifact_registry"
+  project_id = var.project_id
+  region     = var.region
 }
 
-# Cloud Run Service (Routing Engine)
-resource "google_cloud_run_service" "routing_engine" {
-  name     = "routing-engine"
-  location = var.region
-
-  template {
-    spec {
-      containers {
-        image = "europe-west1-docker.pkg.dev/${var.project_id}/cybertranspay/routing-engine:latest"
-        resources {
-          limits = {
-            cpu    = "2"
-            memory = "4Gi"
-          }
-        }
-      }
-    }
-  }
-
-  traffic {
-    percent         = 100
-    latest_revision = true
-  }
+module "cloud_run" {
+  source = "./modules/cloud_run"
+  project_id = var.project_id
+  region     = var.region
+  depends_on = [module.artifact_registry]
 }
 
-# GKE Autopilot Cluster (для высоконагруженных сервисов)
-resource "google_container_cluster" "autopilot" {
-  provider = google-beta
-  name     = "cybertranspay-cluster"
-  location = var.region
-
-  enable_autopilot = true
-
-  release_channel {
-    channel = "REGULAR"
-  }
+module "gke" {
+  source = "./modules/gke"
+  project_id = var.project_id
+  region     = var.region
 }
 
-# Service Account
-resource "google_service_account" "cybertranspay_sa" {
-  account_id   = "cybertranspay-sa"
-  display_name = "CyberTransPay Service Account"
+module "developer_connect" {
+  source = "./modules/developer_connect"
+  project_id = var.project_id
+  region     = var.region
+  github_app_installation_id = var.github_app_installation_id
+}
+
+module "iam" {
+  source = "./modules/iam"
+  project_id = var.project_id
 }
