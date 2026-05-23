@@ -12,6 +12,6 @@ variable "region" {
 
 variable "github_app_installation_id" {
   description = "GitHub App Installation ID for Developer Connect"
-  type        = string
-  sensitive   = true
+  type        = number
+  default     = 0
 }

@@ -15,6 +15,9 @@ Cargo.lock
 *.tfstate
 *.tfstate.backup
 
+# Flutter SDK (local dev only)
+.flutter-sdk/
+
 # OS
 .DS_Store
 Thumbs.db
