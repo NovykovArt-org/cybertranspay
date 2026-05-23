@@ -1,0 +1,46 @@
+# Build and push routing-engine to Artifact Registry.
+# Trigger: push to main, or manual `gcloud builds submit --config=cloudbuild.yaml`
+substitutions:
+  _REGION: europe-west1
+  _REPOSITORY: cybertranspay
+  _IMAGE: routing-engine
+
+steps:
+  - id: docker-build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:$SHORT_SHA
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:latest
+      - -f
+      - backend/routing-engine/Dockerfile
+      - backend
+
+  - id: docker-push
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - --all-tags
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}
+
+  - id: deploy-cloud-run
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - services
+      - update
+      - routing-engine
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:$SHORT_SHA
+      - --region=${_REGION}
+      - --project=$PROJECT_ID
+      - --quiet
+
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:$SHORT_SHA
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:latest
+
+options:
+  logging: CLOUD_LOGGING_ONLY

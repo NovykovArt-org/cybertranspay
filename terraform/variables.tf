@@ -15,3 +15,15 @@ variable "github_app_installation_id" {
   type        = number
   default     = 0
 }
+
+variable "routing_engine_image_tag" {
+  description = "Docker image tag for routing-engine on Cloud Run"
+  type        = string
+  default     = "latest"
+}
+
+variable "allow_public_routing_api" {
+  description = "Allow unauthenticated access to routing-engine (dev/MVP only)"
+  type        = bool
+  default     = false
+}

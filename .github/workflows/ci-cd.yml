@@ -19,7 +19,7 @@ jobs:
       - name: Check Rust code
         run: |
           if [ -d "backend" ]; then
-            cd backend && cargo check || echo "Rust skipped"
+            cd backend && cargo test --all
           fi
 
       - name: Setup Flutter
@@ -30,13 +30,15 @@ jobs:
       - name: Check Flutter
         run: |
           if [ -d "frontend" ]; then
-            cd frontend && flutter analyze || echo "Flutter skipped"
+            cd frontend && flutter pub get && flutter analyze && flutter test
           fi
 
       - name: Terraform Validate
         run: |
           if [ -d "terraform" ]; then
-            cd terraform && terraform fmt -check && terraform validate || echo "Terraform skipped"
+            cd terraform && terraform fmt -check -recursive
+            terraform init -backend=false
+            terraform validate
           fi
 
       - name: ✅ All checks passed
