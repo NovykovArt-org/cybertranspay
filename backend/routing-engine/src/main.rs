@@ -1,5 +1,9 @@
-use axum::{routing::{get, post}, Router};
-use routing_engine::{api, health, AppState};
+use axum::{
+    middleware,
+    routing::{get, post},
+    Router,
+};
+use routing_engine::{api, auth, health, AppState};
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
@@ -11,17 +15,24 @@ async fn main() {
         .with_env_filter(EnvFilter::from_default_env())
         .init();
 
+    let state = AppState::from_env();
+    let auth = state.auth.clone();
+
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(Any)
         .allow_headers(Any);
 
+    let protected = Router::new()
+        .route("/v1/routes/quote", post(api::quote_routes))
+        .route_layer(middleware::from_fn_with_state(auth, auth::require_api_key));
+
     let app = Router::new()
         .route("/health", get(health))
-        .route("/v1/routes/quote", post(api::quote_routes))
+        .merge(protected)
         .layer(cors)
         .layer(TraceLayer::new_for_http())
-        .with_state(AppState::default());
+        .with_state(state);
 
     let port: u16 = std::env::var("PORT")
         .ok()

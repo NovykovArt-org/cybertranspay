@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -26,6 +27,7 @@ pub struct RouteQuote {
     pub fee_percent: f64,
     pub eta_minutes: u32,
     pub compliance_score: u8,
+    pub spot_rate: f64,
     pub estimated_receive: f64,
 }
 
@@ -34,4 +36,8 @@ pub struct QuoteResponse {
     pub request: QuoteRequest,
     pub routes: Vec<RouteQuote>,
     pub selected_preference: RoutePreference,
+    pub spot_rate: f64,
+    pub rate_source: String,
+    pub live_pricing: bool,
+    pub priced_at: DateTime<Utc>,
 }

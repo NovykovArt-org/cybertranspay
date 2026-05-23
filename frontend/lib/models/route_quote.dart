@@ -27,6 +27,7 @@ class RouteQuote {
     required this.feePercent,
     required this.etaMinutes,
     required this.complianceScore,
+    required this.spotRate,
     required this.estimatedReceive,
   });
 
@@ -37,6 +38,7 @@ class RouteQuote {
         feePercent: (json['fee_percent'] as num).toDouble(),
         etaMinutes: json['eta_minutes'] as int,
         complianceScore: json['compliance_score'] as int,
+        spotRate: (json['spot_rate'] as num).toDouble(),
         estimatedReceive: (json['estimated_receive'] as num).toDouble(),
       );
 
@@ -46,19 +48,32 @@ class RouteQuote {
   final double feePercent;
   final int etaMinutes;
   final int complianceScore;
+  final double spotRate;
   final double estimatedReceive;
 }
 
 class QuoteResponse {
-  QuoteResponse({required this.routes, required this.preference});
+  QuoteResponse({
+    required this.routes,
+    required this.preference,
+    required this.spotRate,
+    required this.rateSource,
+    required this.livePricing,
+  });
 
   factory QuoteResponse.fromJson(Map<String, dynamic> json) => QuoteResponse(
         routes: (json['routes'] as List<dynamic>)
             .map((e) => RouteQuote.fromJson(e as Map<String, dynamic>))
             .toList(),
         preference: json['selected_preference'] as String? ?? 'cheapest',
+        spotRate: (json['spot_rate'] as num).toDouble(),
+        rateSource: json['rate_source'] as String? ?? 'unknown',
+        livePricing: json['live_pricing'] as bool? ?? false,
       );
 
   final List<RouteQuote> routes;
   final String preference;
+  final double spotRate;
+  final String rateSource;
+  final bool livePricing;
 }

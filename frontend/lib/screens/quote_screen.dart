@@ -19,6 +19,7 @@ class _QuoteScreenState extends State<QuoteScreen> {
   bool _loading = false;
   String? _error;
   List<RouteQuote> _routes = [];
+  QuoteResponse? _lastQuote;
   bool? _apiHealthy;
 
   @override
@@ -60,6 +61,7 @@ class _QuoteScreenState extends State<QuoteScreen> {
       if (!mounted) return;
       setState(() {
         _routes = response.routes;
+        _lastQuote = response;
         _loading = false;
       });
     } on ApiException catch (e) {
@@ -68,6 +70,7 @@ class _QuoteScreenState extends State<QuoteScreen> {
         _error = e.message;
         _loading = false;
         _routes = [];
+        _lastQuote = null;
       });
     } catch (e) {
       if (!mounted) return;
@@ -75,6 +78,7 @@ class _QuoteScreenState extends State<QuoteScreen> {
         _error = 'Не удалось связаться с API: $e';
         _loading = false;
         _routes = [];
+        _lastQuote = null;
       });
     }
   }
@@ -154,6 +158,14 @@ class _QuoteScreenState extends State<QuoteScreen> {
           const SizedBox(height: 20),
           if (_routes.isEmpty && !_loading && _error == null)
             const Text('Выберите пару активов и запросите котировку маршрута.'),
+          if (_lastQuote != null) ...[
+            Text(
+              'Курс: ${_lastQuote!.spotRate.toStringAsFixed(4)} (${_lastQuote!.rateSource})'
+              '${_lastQuote!.livePricing ? ' · live' : ''}',
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            const SizedBox(height: 8),
+          ],
           ..._routes.map(_RouteCard.new),
         ],
       ),

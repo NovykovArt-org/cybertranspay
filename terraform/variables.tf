@@ -23,7 +23,26 @@ variable "routing_engine_image_tag" {
 }
 
 variable "allow_public_routing_api" {
-  description = "Allow unauthenticated access to routing-engine (dev/MVP only)"
+  description = "Allow unauthenticated Cloud Run invoke (dev/MVP only)"
   type        = bool
   default     = false
+}
+
+variable "auth_required" {
+  description = "Require X-API-Key header on /v1/* routes"
+  type        = bool
+  default     = true
+}
+
+variable "auth_api_keys" {
+  description = "Comma-separated API keys stored in Secret Manager"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "create_auth_secret" {
+  description = "Create Secret Manager secret for AUTH_API_KEYS"
+  type        = bool
+  default     = true
 }

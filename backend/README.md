@@ -8,7 +8,26 @@ Rust workspace for CyberTransPay core services.
 
 ## Routing engine
 
-`POST /v1/routes/quote` accepts JSON:
+### Live rates
+
+Spot rates from public APIs (60s cache):
+
+- **CoinGecko** — USDT, USDC, BTC → USD
+- **Frankfurter** — fiat crosses (USD base)
+
+### Authentication
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AUTH_REQUIRED` | `false` locally | Require `X-API-Key` on `/v1/*` |
+| `AUTH_API_KEYS` | — | Comma-separated valid keys |
+| `PORT` | `8080` | HTTP port |
+
+`/health` is always public.
+
+### API
+
+`POST /v1/routes/quote`:
 
 ```json
 {
@@ -19,23 +38,22 @@ Rust workspace for CyberTransPay core services.
 }
 ```
 
-`preference`: `cheapest` | `fastest` | `compliant`
-
-The engine scores routes from an internal catalog (bank, stablecoin, bridge, CEX, CBDC rails) and returns up to three ranked options.
+Response includes `spot_rate`, `rate_source`, `live_pricing`, `priced_at`, and ranked `routes`.
 
 ## Run locally
 
 ```bash
 cd backend
+export AUTH_REQUIRED=false
 cargo run -p routing-engine
 ```
 
-- Health: `http://localhost:8080/health`
-- Quote: `curl -X POST http://localhost:8080/v1/routes/quote -H 'Content-Type: application/json' -d '{"from_asset":"USDT","to_asset":"EUR","amount":1000,"preference":"fastest"}'`
+With auth:
 
-Environment:
-
-| Variable | Default |
-|----------|---------|
-| `PORT` | `8080` |
-| `RUST_LOG` | (optional) `routing_engine=debug` |
+```bash
+export AUTH_REQUIRED=true
+export AUTH_API_KEYS=dev-secret-key
+curl -H 'X-API-Key: dev-secret-key' -X POST http://localhost:8080/v1/routes/quote \
+  -H 'Content-Type: application/json' \
+  -d '{"from_asset":"USDT","to_asset":"EUR","amount":1000,"preference":"fastest"}'
+```

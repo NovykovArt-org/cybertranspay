@@ -24,6 +24,24 @@ resource "google_cloud_run_service" "routing_engine" {
           value = "info"
         }
 
+        env {
+          name  = "AUTH_REQUIRED"
+          value = var.auth_required ? "true" : "false"
+        }
+
+        dynamic "env" {
+          for_each = var.api_keys_secret_id != "" ? [1] : []
+          content {
+            name = "AUTH_API_KEYS"
+            value_from {
+              secret_key_ref {
+                name = "${var.api_keys_secret_id}/versions/latest"
+                key  = "latest"
+              }
+            }
+          }
+        }
+
         resources {
           limits = {
             cpu    = "1000m"

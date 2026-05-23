@@ -30,3 +30,13 @@ variable "min_instances" {
   type    = number
   default = 0
 }
+
+variable "auth_required" {
+  type    = bool
+  default = true
+}
+
+variable "api_keys_secret_id" {
+  type    = string
+  default = ""
+}

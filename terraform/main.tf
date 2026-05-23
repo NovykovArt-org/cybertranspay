@@ -23,6 +23,17 @@ module "iam" {
   depends_on = [module.project_apis]
 }
 
+module "secrets" {
+  source     = "./modules/secrets"
+  project_id = var.project_id
+
+  api_keys              = var.auth_api_keys
+  create_api_key_secret = var.create_auth_secret
+  service_account_email = module.iam.service_account_email
+
+  depends_on = [module.project_apis, module.iam]
+}
+
 module "cloud_run" {
   source     = "./modules/cloud_run"
   project_id = var.project_id
@@ -31,8 +42,10 @@ module "cloud_run" {
   service_account_email = module.iam.service_account_email
   image_tag             = var.routing_engine_image_tag
   allow_unauthenticated = var.allow_public_routing_api
+  auth_required         = var.auth_required
+  api_keys_secret_id    = module.secrets.api_keys_secret_id
 
-  depends_on = [module.artifact_registry, module.iam, module.project_apis]
+  depends_on = [module.artifact_registry, module.iam, module.project_apis, module.secrets]
 }
 
 module "gke" {

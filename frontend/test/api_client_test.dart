@@ -22,9 +22,13 @@ void main() {
     "fee_percent": 0.15,
     "eta_minutes": 5,
     "compliance_score": 78,
+    "spot_rate": 0.92,
     "estimated_receive": 998.5
   }],
-  "selected_preference": "cheapest"
+  "selected_preference": "cheapest",
+  "spot_rate": 0.92,
+  "rate_source": "mock",
+  "live_pricing": false
 }
 ''',
           200,

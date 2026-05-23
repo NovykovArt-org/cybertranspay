@@ -6,6 +6,7 @@ resource "google_project_service" "required" {
     "developerconnect.googleapis.com",
     "iam.googleapis.com",
     "run.googleapis.com",
+    "secretmanager.googleapis.com",
   ])
 
   project            = var.project_id

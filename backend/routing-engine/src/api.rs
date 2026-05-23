@@ -14,6 +14,8 @@ use thiserror::Error;
 pub enum ApiError {
     #[error("invalid request: {0}")]
     BadRequest(String),
+    #[error("rate lookup failed: {0}")]
+    RateUnavailable(String),
 }
 
 #[derive(Serialize)]
@@ -23,15 +25,16 @@ struct ErrorBody {
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        let (status, message) = match self {
-            ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
+        let (status, message) = match &self {
+            ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
+            ApiError::RateUnavailable(msg) => (StatusCode::SERVICE_UNAVAILABLE, msg.clone()),
         };
         (status, Json(ErrorBody { error: message })).into_response()
     }
 }
 
 pub async fn quote_routes(
-    State(_state): State<AppState>,
+    State(state): State<AppState>,
     Json(request): Json<QuoteRequest>,
 ) -> Result<Json<QuoteResponse>, ApiError> {
     if !request.amount.is_finite() || request.amount <= 0.0 {
@@ -45,12 +48,23 @@ pub async fn quote_routes(
         ));
     }
 
+    let spot = state
+        .rates
+        .spot_rate(&request.from_asset, &request.to_asset)
+        .await
+        .map_err(|e| ApiError::RateUnavailable(e.to_string()))?;
+
     let preference = request.preference;
-    let routes = engine::quote(&request);
+    let routes = engine::quote(&request, spot.rate);
+    let live_pricing = state.rates.is_live();
 
     Ok(Json(QuoteResponse {
         request,
         routes,
         selected_preference: preference,
+        spot_rate: spot.rate,
+        rate_source: spot.source,
+        live_pricing,
+        priced_at: spot.fetched_at,
     }))
 }

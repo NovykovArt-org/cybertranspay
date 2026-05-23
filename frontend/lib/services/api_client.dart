@@ -14,16 +14,28 @@ class ApiException implements Exception {
 }
 
 class ApiClient {
-  ApiClient({http.Client? client, String? baseUrl})
+  ApiClient({http.Client? client, String? baseUrl, String? apiKey})
       : _client = client ?? http.Client(),
-        _baseUrl = baseUrl ?? AppConfig.apiBaseUrl;
+        _baseUrl = baseUrl ?? AppConfig.apiBaseUrl,
+        _apiKey = apiKey ?? AppConfig.apiKey;
 
   final http.Client _client;
   final String _baseUrl;
+  final String _apiKey;
+
+  Map<String, String> get _headers {
+    final headers = <String, String>{'Content-Type': 'application/json'};
+    if (_apiKey.isNotEmpty) {
+      headers['X-API-Key'] = _apiKey;
+    }
+    return headers;
+  }
 
   Future<bool> checkHealth() async {
     final uri = Uri.parse('$_baseUrl/health');
-    final response = await _client.get(uri).timeout(const Duration(seconds: 8));
+    final response = await _client
+        .get(uri, headers: _headers)
+        .timeout(const Duration(seconds: 8));
     if (response.statusCode != 200) {
       return false;
     }
@@ -36,10 +48,17 @@ class ApiClient {
     final response = await _client
         .post(
           uri,
-          headers: {'Content-Type': 'application/json'},
+          headers: _headers,
           body: jsonEncode(request.toJson()),
         )
-        .timeout(const Duration(seconds: 15));
+        .timeout(const Duration(seconds: 20));
+
+    if (response.statusCode == 401) {
+      throw ApiException(
+        'Требуется API-ключ (передайте --dart-define=API_KEY=...)',
+        statusCode: 401,
+      );
+    }
 
     if (response.statusCode != 200) {
       throw ApiException(

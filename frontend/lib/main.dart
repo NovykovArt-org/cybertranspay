@@ -82,6 +82,11 @@ class _WelcomeTab extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text('API: $apiBaseUrl', style: Theme.of(context).textTheme.bodySmall),
+            if (!AppConfig.hasApiKey)
+              Text(
+                'API_KEY не задан — нужен, если AUTH_REQUIRED=true',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
           ],
         ),
       ),

@@ -64,7 +64,7 @@ const CATALOG: &[RouteCandidate] = &[
     },
 ];
 
-pub fn quote(request: &QuoteRequest) -> Vec<RouteQuote> {
+pub fn quote(request: &QuoteRequest, spot_rate: f64) -> Vec<RouteQuote> {
     let from = request.from_asset.to_uppercase();
     let to = request.to_asset.to_uppercase();
 
@@ -73,8 +73,8 @@ pub fn quote(request: &QuoteRequest) -> Vec<RouteQuote> {
         .filter(|c| c.from_assets.contains(&from.as_str()) && c.to_assets.contains(&to.as_str()))
         .map(|c| {
             let fee_multiplier = 1.0 - (c.fee_percent / 100.0);
-            let estimated_receive =
-                ((request.amount * fee_multiplier) * 100.0).round() / 100.0;
+            let estimated_receive = ((request.amount * spot_rate * fee_multiplier) * 100.0).round()
+                / 100.0;
             RouteQuote {
                 route_id: c.route_id.to_string(),
                 label: c.label.to_string(),
@@ -82,6 +82,7 @@ pub fn quote(request: &QuoteRequest) -> Vec<RouteQuote> {
                 fee_percent: c.fee_percent,
                 eta_minutes: c.eta_minutes,
                 compliance_score: c.compliance_score,
+                spot_rate,
                 estimated_receive,
             }
         })
@@ -131,7 +132,7 @@ mod tests {
             amount: 1000.0,
             preference: RoutePreference::Cheapest,
         };
-        let routes = quote(&request);
+        let routes = quote(&request, 0.92);
         assert!(!routes.is_empty());
         assert!(routes.len() <= 3);
     }
@@ -144,7 +145,7 @@ mod tests {
             amount: 500.0,
             preference: RoutePreference::Cheapest,
         };
-        let routes = quote(&request);
+        let routes = quote(&request, 0.92);
         for pair in routes.windows(2) {
             assert!(pair[0].fee_percent <= pair[1].fee_percent);
         }
@@ -158,6 +159,6 @@ mod tests {
             amount: 100.0,
             preference: RoutePreference::Fastest,
         };
-        assert!(quote(&request).is_empty());
+        assert!(quote(&request, 1.0).is_empty());
     }
 }
