@@ -1,6 +1,10 @@
-# Main Terraform Configuration
 terraform {
   required_version = ">= 1.9.0"
+
+  backend "gcs" {
+    bucket = "cybertranspay-terraform-state"
+    prefix = "terraform/state"
+  }
 }
 
 module "artifact_registry" {
@@ -13,7 +17,6 @@ module "cloud_run" {
   source     = "./modules/cloud_run"
   project_id = var.project_id
   region     = var.region
-  depends_on = [module.artifact_registry]
 }
 
 module "gke" {
@@ -22,12 +25,9 @@ module "gke" {
   region     = var.region
 }
 
-module "developer_connect" {
-  source                     = "./modules/developer_connect"
-  project_id                 = var.project_id
-  region                     = var.region
-  github_app_installation_id = var.github_app_installation_id
-}
+# module "developer_connect" {          # Временно отключен
+#   source = "./modules/developer_connect"
+# }
 
 module "iam" {
   source     = "./modules/iam"
