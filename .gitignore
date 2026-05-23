@@ -25,3 +25,5 @@ Thumbs.db
 # Logs
 *.log
 logs/
+terraform/terraform.tfvars
+*.tfvars
