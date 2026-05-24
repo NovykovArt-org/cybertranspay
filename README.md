@@ -26,7 +26,7 @@
 
 **Статус:** Pre-MVP | Активная разработка
 
-**Деплой в GCP:** [docs/DEPLOY_GCP.md](docs/DEPLOY_GCP.md) · **Проект:** [docs/GCP_PROJECT.md](docs/GCP_PROJECT.md) (`cybertranspay` / `1079379369218`)
+**Деплой routing-engine:** [docs/DEPLOY_ROUTING_ENGINE.md](docs/DEPLOY_ROUTING_ENGINE.md)
 
 **Лицензия кода:** Apache 2.0  
 **Торговая марка:** Принадлежит NovykovArt-org (все права защищены)
