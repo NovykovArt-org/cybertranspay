@@ -7,6 +7,7 @@ use thiserror::Error;
 use tokio::sync::RwLock;
 
 const CACHE_TTL: Duration = Duration::from_secs(60);
+const USER_AGENT: &str = "CyberTransPay-routing-engine/0.1.0 (+https://github.com/NovykovArt-org/cybertranspay)";
 
 #[derive(Debug, Clone)]
 pub struct SpotRate {
@@ -34,6 +35,7 @@ struct CachedRates {
     expires_at: std::time::Instant,
     fiat: HashMap<String, HashMap<String, f64>>,
     crypto_usd: HashMap<String, f64>,
+    rate_source: String,
 }
 
 #[derive(Deserialize)]
@@ -52,6 +54,7 @@ impl LiveRates {
         Self {
             client: reqwest::Client::builder()
                 .timeout(Duration::from_secs(10))
+                .user_agent(USER_AGENT)
                 .build()
                 .expect("http client"),
             cache: Arc::new(RwLock::new(None)),
@@ -99,7 +102,7 @@ impl LiveRates {
         let rate = compute_rate(&from, &to, cached)?;
         Ok(SpotRate {
             rate,
-            source: "coingecko+frankfurter".into(),
+            source: cached.rate_source.clone(),
             fetched_at: Utc::now(),
         })
     }
@@ -115,13 +118,26 @@ impl LiveRates {
         }
 
         let fiat = fetch_fiat_rates(&self.client).await?;
-        let crypto_usd = fetch_crypto_rates(&self.client).await?;
+        let (crypto_usd, crypto_source) = match fetch_crypto_rates(&self.client).await {
+            Ok(rates) => (rates, "coingecko".to_string()),
+            Err(err) => {
+                tracing::warn!("CoinGecko unavailable, using stablecoin defaults: {err}");
+                (default_crypto_usd(), "stablecoin-default".to_string())
+            }
+        };
+
+        let rate_source = if crypto_source == "coingecko" {
+            "coingecko+frankfurter".into()
+        } else {
+            "frankfurter+stablecoin-default".into()
+        };
 
         let mut guard = self.cache.write().await;
         *guard = Some(CachedRates {
             expires_at: std::time::Instant::now() + CACHE_TTL,
             fiat,
             crypto_usd,
+            rate_source,
         });
         Ok(())
     }
@@ -191,8 +207,15 @@ async fn fetch_fiat_rates(
 async fn fetch_crypto_rates(client: &reqwest::Client) -> Result<HashMap<String, f64>, RateError> {
     let url =
         "https://api.coingecko.com/api/v3/simple/price?ids=tether,usd-coin,bitcoin&vs_currencies=usd";
-    let resp: CoinGeckoResponse = client
-        .get(url)
+    let mut request = client.get(url).header("Accept", "application/json");
+
+    if let Ok(key) = std::env::var("COINGECKO_API_KEY") {
+        if !key.is_empty() {
+            request = request.header("x-cg-demo-api-key", key);
+        }
+    }
+
+    let resp: CoinGeckoResponse = request
         .send()
         .await
         .map_err(|e| RateError::Upstream(e.to_string()))?
@@ -220,7 +243,18 @@ async fn fetch_crypto_rates(client: &reqwest::Client) -> Result<HashMap<String, 
         }
     }
 
+    if usd.is_empty() {
+        return Err(RateError::Upstream("empty coingecko response".into()));
+    }
+
     Ok(usd)
+}
+
+fn default_crypto_usd() -> HashMap<String, f64> {
+    HashMap::from([
+        ("USDT".into(), 1.0),
+        ("USDC".into(), 1.0),
+    ])
 }
 
 #[cfg(test)]
@@ -232,5 +266,12 @@ mod tests {
         let rates = LiveRates::mock(1.08);
         let spot = rates.spot_rate("USDT", "EUR").await.unwrap();
         assert!((spot.rate - 1.08).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn default_crypto_usd_pegs_stables() {
+        let defaults = default_crypto_usd();
+        assert_eq!(defaults.get("USDT"), Some(&1.0));
+        assert_eq!(defaults.get("USDC"), Some(&1.0));
     }
 }
