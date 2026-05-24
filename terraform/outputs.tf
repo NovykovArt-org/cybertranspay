@@ -1,14 +1,8 @@
-output "routing_engine_url" {
-  description = "Cloud Run URL for the routing engine API"
-  value       = module.cloud_run.service_url
+output "project_id" {
+  value = var.project_id
 }
 
-output "artifact_registry_docker" {
-  description = "Docker repository prefix for images"
-  value       = module.artifact_registry.docker_repository
-}
-
-output "service_account_email" {
-  description = "Runtime service account for CyberTransPay workloads"
-  value       = module.iam.service_account_email
+output "project_number_hint" {
+  description = "Expected GCP project number for cybertranspay"
+  value       = "1079379369218"
 }

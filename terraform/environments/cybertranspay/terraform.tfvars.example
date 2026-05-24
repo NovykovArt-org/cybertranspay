@@ -1,0 +1,12 @@
+# Project cybertranspay (1079379369218)
+# Copy to terraform.tfvars and set auth_api_keys:
+#   cp terraform.tfvars.example terraform.tfvars
+
+project_id                 = "cybertranspay"
+region                     = "europe-west1"
+routing_engine_image_tag   = "latest"
+allow_public_routing_api   = false
+auth_required              = true
+auth_api_keys              = "GENERATE-WITH-openssl-rand-hex-32"
+create_auth_secret         = true
+github_app_installation_id = 0

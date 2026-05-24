@@ -1,4 +1,4 @@
-project_id                   = "your-gcp-project-id"
+project_id                   = "cybertranspay"
 region                       = "europe-west1"
 routing_engine_image_tag     = "latest"
 allow_public_routing_api     = false

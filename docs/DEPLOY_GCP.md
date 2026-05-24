@@ -1,5 +1,8 @@
 # Деплой CyberTransPay в Google Cloud
 
+**Проект:** `cybertranspay` · **номер:** `1079379369218`  
+См. также [GCP_PROJECT.md](GCP_PROJECT.md).
+
 Пошаговая инструкция для **routing-engine** (Cloud Run) и инфраструктуры из `terraform/`.
 
 ## Предварительные требования
@@ -11,9 +14,9 @@
 ## Быстрый путь (скрипт)
 
 ```bash
-export PROJECT_ID="your-gcp-project-id"
-export REGION="europe-west1"
-export AUTH_API_KEYS="your-long-random-api-key"
+export PROJECT_ID="cybertranspay"
+export PROJECT_NUMBER="1079379369218"
+export AUTH_API_KEYS="$(openssl rand -hex 32)"
 ./scripts/gcp-apply.sh
 ```
 

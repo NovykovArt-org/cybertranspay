@@ -35,7 +35,7 @@ resource "google_cloud_run_service" "routing_engine" {
             name = "AUTH_API_KEYS"
             value_from {
               secret_key_ref {
-                name = "${var.api_keys_secret_id}/versions/latest"
+                name = var.api_keys_secret_id
                 key  = "latest"
               }
             }
