@@ -1,2 +1,10 @@
 # gcloud uses .gitignore by default; explicitly include files needed for Cloud Build
 !backend/Cargo.lock
+
+# Large local/dev folders — exclude from Cloud Build upload
+.flutter-sdk/
+**/.flutter-sdk/
+**/target/
+frontend/build/
+.dart_tool/
+.terraform/

@@ -36,6 +36,8 @@ terraform.tfvars.json
 # Flutter / Dart
 # ======================
 **/flutter_sdk/
+.flutter-sdk/
+**/.flutter-sdk/
 .dart_tool/
 **/build/
 **/ios/Flutter/App.framework/
