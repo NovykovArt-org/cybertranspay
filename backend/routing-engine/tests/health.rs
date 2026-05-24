@@ -7,7 +7,7 @@ use tower::ServiceExt;
 async fn health_returns_ok() {
     let app = Router::new()
         .route("/health", get(health))
-        .with_state(AppState::default());
+        .with_state(AppState::for_tests());
 
     let response = app
         .oneshot(
@@ -23,5 +23,6 @@ async fn health_returns_ok() {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(json["status"], "ok");
-    assert_eq!(json["live_rates"], true);
+    assert_eq!(json["live_rates"], false);
+    assert_eq!(json["auth_required"], false);
 }
