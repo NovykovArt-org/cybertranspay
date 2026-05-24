@@ -36,11 +36,12 @@ steps:
       - run
       - deploy
       - routing-engine
-      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$BUILD_ID
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:latest
       - --region=${_REGION}
       - --project=$PROJECT_ID
       - --port=8080
-      - --platform=managed
+      - --memory=512Mi
+      - --allow-unauthenticated
       - --quiet
     waitFor: [docker-push]
 

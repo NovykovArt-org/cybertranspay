@@ -20,4 +20,7 @@ echo Granting IAM to Cloud Build SA...
 gcloud projects add-iam-policy-binding %PROJECT_ID% --member=serviceAccount:%CLOUDBUILD_SA% --role=roles/artifactregistry.writer
 gcloud projects add-iam-policy-binding %PROJECT_ID% --member=serviceAccount:%CLOUDBUILD_SA% --role=roles/run.admin
 
+echo Granting Artifact Registry reader to Cloud Run service agent...
+gcloud projects add-iam-policy-binding %PROJECT_ID% --member=serviceAccount:service-1079379369218@serverless-robot-prod.iam.gserviceaccount.com --role=roles/artifactregistry.reader
+
 echo Done. Now run: gcloud builds submit --config=cloudbuild.yaml --project=cybertranspay
