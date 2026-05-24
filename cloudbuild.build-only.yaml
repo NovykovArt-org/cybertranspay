@@ -1,9 +1,6 @@
-# Cloud Build: build → push → update Cloud Run routing-engine
-#
-# Manual update:
-#   gcloud builds submit --config=cloudbuild.yaml --project=cybertranspay
-#
-# Or: scripts\update-routing-engine.cmd
+# Только сборка и push (без деплоя в Cloud Run)
+# Используйте, если deploy делаете вручную:
+#   gcloud run deploy routing-engine --image=...:latest ...
 
 substitutions:
   _REGION: europe-west1
@@ -30,21 +27,6 @@ steps:
       - --all-tags
       - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}
     waitFor: [docker-build]
-
-  # services update (not deploy) — сервис уже создан; без --allow-unauthenticated
-  - id: update-cloud-run
-    name: gcr.io/google.com/cloudsdktool/cloud-sdk
-    entrypoint: gcloud
-    args:
-      - run
-      - services
-      - update
-      - routing-engine
-      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:latest
-      - --region=${_REGION}
-      - --project=$PROJECT_ID
-      - --quiet
-    waitFor: [docker-push]
 
 images:
   - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$BUILD_ID

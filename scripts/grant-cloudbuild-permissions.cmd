@@ -23,4 +23,7 @@ gcloud projects add-iam-policy-binding %PROJECT_ID% --member=serviceAccount:%CLO
 echo Granting Artifact Registry reader to Cloud Run service agent...
 gcloud projects add-iam-policy-binding %PROJECT_ID% --member=serviceAccount:service-1079379369218@serverless-robot-prod.iam.gserviceaccount.com --role=roles/artifactregistry.reader
 
-echo Done. Now run: gcloud builds submit --config=cloudbuild.yaml --project=cybertranspay
+echo Granting Compute SA permission to act as itself (Cloud Run deploy)...
+gcloud iam service-accounts add-iam-policy-binding %COMPUTE_SA% --member=serviceAccount:%COMPUTE_SA% --role=roles/iam.serviceAccountUser --project=%PROJECT_ID%
+
+echo Done. Update with: scripts\update-routing-engine.cmd
