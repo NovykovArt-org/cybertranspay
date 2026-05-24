@@ -1,14 +1,19 @@
 use crate::assets::{self, AssetInfo};
-use crate::domain::{AssetsResponse, QuoteRequest, QuoteResponse, SpotRateQuery, SpotRateResponse};
+use crate::domain::{
+    AssetsResponse, CreateTransferRequest, QuoteRequest, QuoteResponse, SpotRateQuery,
+    SpotRateResponse, TransferResponse,
+};
 use crate::engine;
 use crate::rates::RateError;
+use crate::transfers::TransferError;
 use crate::AppState;
 use axum::{
-    extract::{Query, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
+use chrono::Utc;
 use serde::Serialize;
 use thiserror::Error;
 
@@ -16,6 +21,8 @@ use thiserror::Error;
 pub enum ApiError {
     #[error("invalid request: {0}")]
     BadRequest(String),
+    #[error("not found: {0}")]
+    NotFound(String),
     #[error("rate lookup failed: {0}")]
     RateUnavailable(String),
 }
@@ -29,6 +36,7 @@ impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
         let (status, message) = match &self {
             ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
+            ApiError::NotFound(msg) => (StatusCode::NOT_FOUND, msg.clone()),
             ApiError::RateUnavailable(msg) => (StatusCode::SERVICE_UNAVAILABLE, msg.clone()),
         };
         (status, Json(ErrorBody { error: message })).into_response()
@@ -41,6 +49,12 @@ impl From<RateError> for ApiError {
             RateError::UnsupportedPair { .. } => ApiError::BadRequest(err.to_string()),
             RateError::Upstream(msg) => ApiError::RateUnavailable(msg),
         }
+    }
+}
+
+impl From<TransferError> for ApiError {
+    fn from(err: TransferError) -> Self {
+        ApiError::BadRequest(err.to_string())
     }
 }
 
@@ -63,9 +77,9 @@ pub async fn spot_rate(
     let to = query.to.trim().to_uppercase();
 
     if !assets::is_supported(&from) || !assets::is_supported(&to) {
-        return Err(ApiError::BadRequest(format!(
-            "unsupported asset; use GET /v1/assets for supported codes"
-        )));
+        return Err(ApiError::BadRequest(
+            "unsupported asset; use GET /v1/assets for supported codes".into(),
+        ));
     }
 
     let spot = state.rates.spot_rate(&from, &to).await?;
@@ -95,12 +109,27 @@ pub async fn quote_routes(
         ));
     }
 
-    let spot = state.rates.spot_rate(&request.from_asset, &request.to_asset).await?;
+    let from = request.from_asset.trim().to_uppercase();
+    let to = request.to_asset.trim().to_uppercase();
+
+    if !assets::is_supported(&from) || !assets::is_supported(&to) {
+        return Err(ApiError::BadRequest(
+            "unsupported asset; use GET /v1/assets for supported codes".into(),
+        ));
+    }
+
+    let spot = state.rates.spot_rate(&from, &to).await?;
 
     let preference = request.preference;
+    let mut request = request;
+    request.from_asset = from;
+    request.to_asset = to;
+
     let routes = engine::quote(&request, spot.rate);
 
-    Ok(Json(QuoteResponse {
+    let response = QuoteResponse {
+        quote_id: String::new(),
+        expires_at: Utc::now(),
         request,
         routes,
         selected_preference: preference,
@@ -108,5 +137,63 @@ pub async fn quote_routes(
         rate_source: spot.source,
         live_pricing: state.rates.is_live(),
         priced_at: spot.fetched_at,
-    }))
+    };
+
+    let stored = state.quotes.insert(response).await;
+    Ok(Json(stored.response))
+}
+
+pub async fn get_quote(
+    State(state): State<AppState>,
+    Path(quote_id): Path<String>,
+) -> Result<Json<QuoteResponse>, ApiError> {
+    let stored = state
+        .quotes
+        .get(&quote_id)
+        .await
+        .ok_or_else(|| ApiError::NotFound(format!("quote '{quote_id}' not found or expired")))?;
+    Ok(Json(stored.response))
+}
+
+pub async fn create_transfer(
+    State(state): State<AppState>,
+    Json(body): Json<CreateTransferRequest>,
+) -> Result<Json<TransferResponse>, ApiError> {
+    if body.quote_id.trim().is_empty() || body.route_id.trim().is_empty() {
+        return Err(ApiError::BadRequest(
+            "quote_id and route_id are required".into(),
+        ));
+    }
+
+    let quote = state
+        .quotes
+        .get(body.quote_id.trim())
+        .await
+        .ok_or_else(|| {
+            ApiError::NotFound(format!(
+                "quote '{}' not found or expired",
+                body.quote_id.trim()
+            ))
+        })?;
+
+    let transfer = state
+        .transfers
+        .create_from_quote(&quote.response, body.route_id.trim())
+        .await?;
+
+    Ok(Json(transfer))
+}
+
+pub async fn get_transfer(
+    State(state): State<AppState>,
+    Path(transfer_id): Path<String>,
+) -> Result<Json<TransferResponse>, ApiError> {
+    let transfer = state
+        .transfers
+        .get(&transfer_id)
+        .await
+        .ok_or_else(|| {
+            ApiError::NotFound(format!("transfer '{transfer_id}' not found"))
+        })?;
+    Ok(Json(transfer))
 }

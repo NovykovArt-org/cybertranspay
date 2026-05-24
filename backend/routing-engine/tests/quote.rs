@@ -29,6 +29,8 @@ async fn quote_returns_ranked_routes() {
     assert_eq!(json["spot_rate"], 0.92);
     assert_eq!(json["rate_source"], "mock");
     assert_eq!(json["live_pricing"], false);
+    assert!(json["quote_id"].as_str().unwrap().len() > 0);
+    assert!(json["expires_at"].as_str().is_some());
 }
 
 #[tokio::test]
