@@ -29,8 +29,8 @@ terraform.tfvars.json
 # Rust / Cargo
 # ======================
 **/target/
-Cargo.lock
 **/Cargo.lock
+!backend/Cargo.lock
 
 # ======================
 # Flutter / Dart
