@@ -2,13 +2,11 @@
 #
 # Manual run:
 #   gcloud builds submit --config=cloudbuild.yaml --project=cybertranspay
-#
-# Uses $BUILD_ID for image tags (always set). $SHORT_SHA is only set on repo triggers.
 
 substitutions:
   _REGION: europe-west1
   _REPOSITORY: cybertranspay
-  _IMAGE: routing-engine
+  _SERVICE: routing-engine
 
 steps:
   - id: docker-build
@@ -16,9 +14,9 @@ steps:
     args:
       - build
       - -t
-      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:$BUILD_ID
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$BUILD_ID
       - -t
-      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:latest
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:latest
       - -f
       - backend/routing-engine/Dockerfile
       - backend
@@ -28,39 +26,27 @@ steps:
     args:
       - push
       - --all-tags
-      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}
     waitFor: [docker-build]
 
   - id: deploy-cloud-run
     name: gcr.io/google.com/cloudsdktool/cloud-sdk
-    entrypoint: bash
+    entrypoint: gcloud
     args:
-      - -c
-      - |
-        set -euo pipefail
-        DEPLOY_IMAGE="${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:$BUILD_ID"
-        if gcloud run services describe routing-engine \
-          --region="${_REGION}" --project="$PROJECT_ID" >/dev/null 2>&1; then
-          gcloud run services update routing-engine \
-            --image="$$DEPLOY_IMAGE" \
-            --region="${_REGION}" \
-            --project="$PROJECT_ID" \
-            --quiet
-        else
-          echo "routing-engine not found — creating (run terraform apply for full config)"
-          gcloud run deploy routing-engine \
-            --image="$$DEPLOY_IMAGE" \
-            --region="${_REGION}" \
-            --project="$PROJECT_ID" \
-            --port=8080 \
-            --platform=managed \
-            --quiet
-        fi
+      - run
+      - deploy
+      - routing-engine
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$BUILD_ID
+      - --region=${_REGION}
+      - --project=$PROJECT_ID
+      - --port=8080
+      - --platform=managed
+      - --quiet
     waitFor: [docker-push]
 
 images:
-  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:$BUILD_ID
-  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:latest
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$BUILD_ID
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:latest
 
 options:
   logging: CLOUD_LOGGING_ONLY
