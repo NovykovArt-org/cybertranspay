@@ -149,28 +149,32 @@ fn compute_rate(from: &str, to: &str, cache: &CachedRates) -> Result<f64, RateEr
     if from_usd <= 0.0 || to_usd <= 0.0 {
         return Err(RateError::Upstream("invalid zero rate".into()));
     }
-    Ok(to_usd / from_usd)
+    Ok(from_usd / to_usd)
 }
 
 fn asset_to_usd(asset: &str, cache: &CachedRates) -> Result<f64, RateError> {
     match asset {
         "USD" => Ok(1.0),
-        "EUR" | "GBP" | "CHF" | "CNY" => {
+        "USDT" | "USDC" => Ok(cache.crypto_usd.get(asset).copied().unwrap_or(1.0)),
+        "BTC" | "ETH" => cache
+            .crypto_usd
+            .get(asset)
+            .copied()
+            .ok_or_else(|| RateError::UnsupportedPair {
+                from: asset.into(),
+                to: "USD".into(),
+            }),
+        other if crate::assets::is_fiat(other) => {
             let table = cache
                 .fiat
                 .get("USD")
                 .ok_or_else(|| RateError::Upstream("USD fiat table missing".into()))?;
-            let per_usd = table.get(asset).ok_or_else(|| RateError::UnsupportedPair {
+            let per_usd = table.get(other).ok_or_else(|| RateError::UnsupportedPair {
                 from: "USD".into(),
-                to: asset.into(),
+                to: other.into(),
             })?;
             Ok(1.0 / per_usd)
         }
-        "USDT" | "USDC" => Ok(cache.crypto_usd.get(asset).copied().unwrap_or(1.0)),
-        "BTC" => cache.crypto_usd.get("BTC").copied().ok_or_else(|| RateError::UnsupportedPair {
-            from: asset.into(),
-            to: "USD".into(),
-        }),
         other => Err(RateError::UnsupportedPair {
             from: other.into(),
             to: "USD".into(),
@@ -206,7 +210,7 @@ async fn fetch_fiat_rates(
 
 async fn fetch_crypto_rates(client: &reqwest::Client) -> Result<HashMap<String, f64>, RateError> {
     let url =
-        "https://api.coingecko.com/api/v3/simple/price?ids=tether,usd-coin,bitcoin&vs_currencies=usd";
+        "https://api.coingecko.com/api/v3/simple/price?ids=tether,usd-coin,bitcoin,ethereum&vs_currencies=usd";
     let mut request = client.get(url).header("Accept", "application/json");
 
     if let Ok(key) = std::env::var("COINGECKO_API_KEY") {
@@ -242,6 +246,11 @@ async fn fetch_crypto_rates(client: &reqwest::Client) -> Result<HashMap<String, 
             usd.insert("BTC".into(), *v);
         }
     }
+    if let Some(e) = resp.coins.get("ethereum") {
+        if let Some(v) = e.get("usd") {
+            usd.insert("ETH".into(), *v);
+        }
+    }
 
     if usd.is_empty() {
         return Err(RateError::Upstream("empty coingecko response".into()));
@@ -273,5 +282,20 @@ mod tests {
         let defaults = default_crypto_usd();
         assert_eq!(defaults.get("USDT"), Some(&1.0));
         assert_eq!(defaults.get("USDC"), Some(&1.0));
+    }
+
+    #[test]
+    fn compute_rate_converts_via_usd() {
+        let cache = CachedRates {
+            expires_at: std::time::Instant::now(),
+            fiat: HashMap::from([(
+                "USD".into(),
+                HashMap::from([("USD".into(), 1.0), ("EUR".into(), 0.92)]),
+            )]),
+            crypto_usd: HashMap::from([("USDT".into(), 1.0)]),
+            rate_source: "test".into(),
+        };
+        let rate = compute_rate("USDT", "EUR", &cache).unwrap();
+        assert!((rate - 0.92).abs() < 0.001);
     }
 }

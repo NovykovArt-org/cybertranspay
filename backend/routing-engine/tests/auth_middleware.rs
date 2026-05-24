@@ -6,6 +6,8 @@ async fn rejects_missing_api_key() {
     let state = AppState {
         rates: routing_engine::rates::LiveRates::mock(1.0),
         auth: routing_engine::auth::AuthConfig::for_test("k1"),
+        quotes: routing_engine::quotes::QuoteStore::with_ttl(chrono::Duration::minutes(5)),
+        transfers: routing_engine::transfers::TransferStore::new(),
     };
     let auth = state.auth.clone();
     let app = Router::new()
@@ -35,6 +37,8 @@ async fn accepts_valid_api_key() {
     let state = AppState {
         rates: routing_engine::rates::LiveRates::mock(0.92),
         auth: routing_engine::auth::AuthConfig::for_test("secret-key"),
+        quotes: routing_engine::quotes::QuoteStore::with_ttl(chrono::Duration::minutes(5)),
+        transfers: routing_engine::transfers::TransferStore::new(),
     };
     let auth = state.auth.clone();
     let app = Router::new()

@@ -42,6 +42,31 @@ const SUPPORTED: &[AssetInfo] = &[
         kind: AssetKind::Fiat,
     },
     AssetInfo {
+        code: "JPY",
+        name: "Japanese Yen",
+        kind: AssetKind::Fiat,
+    },
+    AssetInfo {
+        code: "PLN",
+        name: "Polish Zloty",
+        kind: AssetKind::Fiat,
+    },
+    AssetInfo {
+        code: "TRY",
+        name: "Turkish Lira",
+        kind: AssetKind::Fiat,
+    },
+    AssetInfo {
+        code: "RUB",
+        name: "Russian Ruble",
+        kind: AssetKind::Fiat,
+    },
+    AssetInfo {
+        code: "AED",
+        name: "UAE Dirham",
+        kind: AssetKind::Fiat,
+    },
+    AssetInfo {
         code: "USDT",
         name: "Tether USD",
         kind: AssetKind::Stablecoin,
@@ -56,6 +81,11 @@ const SUPPORTED: &[AssetInfo] = &[
         name: "Bitcoin",
         kind: AssetKind::Crypto,
     },
+    AssetInfo {
+        code: "ETH",
+        name: "Ethereum",
+        kind: AssetKind::Crypto,
+    },
 ];
 
 pub fn supported_assets() -> &'static [AssetInfo] {
@@ -67,18 +97,28 @@ pub fn is_supported(code: &str) -> bool {
     SUPPORTED.iter().any(|a| a.code == code)
 }
 
+pub fn is_fiat(code: &str) -> bool {
+    let code = code.trim().to_uppercase();
+    SUPPORTED
+        .iter()
+        .any(|a| a.code == code && matches!(a.kind, AssetKind::Fiat))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn lists_eight_assets() {
-        assert_eq!(supported_assets().len(), 8);
+    fn lists_fourteen_assets() {
+        assert_eq!(supported_assets().len(), 14);
     }
 
     #[test]
-    fn recognizes_usdt() {
+    fn recognizes_usdt_and_jpy() {
         assert!(is_supported("usdt"));
+        assert!(is_supported("jpy"));
+        assert!(is_fiat("EUR"));
+        assert!(!is_fiat("USDT"));
         assert!(!is_supported("XYZ"));
     }
 }

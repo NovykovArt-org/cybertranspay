@@ -37,7 +37,7 @@ async fn assets_lists_supported_codes() {
         .collect();
     assert!(codes.contains(&"USDT"));
     assert!(codes.contains(&"EUR"));
-    assert_eq!(codes.len(), 8);
+    assert_eq!(codes.len(), 14);
 }
 
 #[tokio::test]
@@ -85,6 +85,8 @@ async fn assets_requires_api_key_when_auth_enabled() {
     let state = AppState {
         rates: routing_engine::rates::LiveRates::mock(1.0),
         auth: routing_engine::auth::AuthConfig::for_test("secret"),
+        quotes: routing_engine::quotes::QuoteStore::with_ttl(chrono::Duration::minutes(5)),
+        transfers: routing_engine::transfers::TransferStore::new(),
     };
     let app = protected_app(state);
 
