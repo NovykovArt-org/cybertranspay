@@ -40,7 +40,17 @@ curl -X POST http://localhost:8080/v1/routes/quote \
   -d '{"from_asset":"USDT","to_asset":"EUR","amount":1000,"preference":"cheapest"}'
 ```
 
-`/health` is always public; `/v1/routes/quote` requires `X-API-Key` when `AUTH_REQUIRED=true`.
+`/health` is always public; `/v1/*` requires `X-API-Key` when `AUTH_REQUIRED=true`.
+
+## Assets and spot rate
+
+```bash
+curl http://localhost:8080/v1/assets -H "X-API-Key: your-secret-key"
+
+curl "http://localhost:8080/v1/rates/spot?from=USDT&to=EUR" -H "X-API-Key: your-secret-key"
+```
+
+Supported assets: USD, EUR, GBP, CHF, CNY, USDT, USDC, BTC.
 
 ## Live quote API
 

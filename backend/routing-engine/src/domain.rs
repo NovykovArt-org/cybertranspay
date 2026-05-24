@@ -41,3 +41,24 @@ pub struct QuoteResponse {
     pub live_pricing: bool,
     pub priced_at: DateTime<Utc>,
 }
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SpotRateQuery {
+    pub from: String,
+    pub to: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct SpotRateResponse {
+    pub from_asset: String,
+    pub to_asset: String,
+    pub rate: f64,
+    pub rate_source: String,
+    pub live_pricing: bool,
+    pub priced_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AssetsResponse {
+    pub assets: Vec<crate::assets::AssetInfo>,
+}
