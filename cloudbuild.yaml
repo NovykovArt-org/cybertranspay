@@ -41,7 +41,6 @@ steps:
       - --project=$PROJECT_ID
       - --port=8080
       - --memory=512Mi
-      - --allow-unauthenticated
       - --quiet
     waitFor: [docker-push]
 
