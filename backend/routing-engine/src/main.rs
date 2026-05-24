@@ -25,6 +25,8 @@ async fn main() {
         .allow_headers(Any);
 
     let protected = Router::new()
+        .route("/v1/assets", get(api::list_assets))
+        .route("/v1/rates/spot", get(api::spot_rate))
         .route("/v1/routes/quote", post(api::quote_routes))
         .route_layer(middleware::from_fn_with_state(auth, auth::require_api_key));
 
