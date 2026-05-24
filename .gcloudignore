@@ -1,0 +1,2 @@
+# gcloud uses .gitignore by default; explicitly include files needed for Cloud Build
+!backend/Cargo.lock

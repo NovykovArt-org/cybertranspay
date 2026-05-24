@@ -8,7 +8,7 @@ Project: **cybertranspay** (`1079379369218`) · Region: **europe-west1**
 | Шаг | Ошибка | Решение |
 |-----|--------|---------|
 | `docker-push` | `denied` / `not found` | `terraform apply` — создаёт Artifact Registry; IAM для Cloud Build SA |
-| `docker-build` | Rust OOM / timeout | В `cloudbuild.yaml`: `machineType: E2_HIGHCPU_8`, `timeout: 1800s` |
+| `docker-build` | `COPY Cargo.lock` failed | Fixed: `.gcloudignore` + Dockerfile without lockfile |
 | `deploy-cloud-run` | `NOT_FOUND: Service routing-engine` | Сначала `terraform apply`, либо deploy создаст минимальный сервис |
 | Image tag | Пустой тег `:`` | Используйте `$BUILD_ID`, не `$SHORT_SHA` (пуст при ручном submit) |
 
