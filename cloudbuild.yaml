@@ -38,18 +38,18 @@ steps:
       - -c
       - |
         set -euo pipefail
-        IMAGE="${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:$BUILD_ID"
+        DEPLOY_IMAGE="${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:$BUILD_ID"
         if gcloud run services describe routing-engine \
           --region="${_REGION}" --project="$PROJECT_ID" >/dev/null 2>&1; then
           gcloud run services update routing-engine \
-            --image="$IMAGE" \
+            --image="$$DEPLOY_IMAGE" \
             --region="${_REGION}" \
             --project="$PROJECT_ID" \
             --quiet
         else
           echo "routing-engine not found — creating (run terraform apply for full config)"
           gcloud run deploy routing-engine \
-            --image="$IMAGE" \
+            --image="$$DEPLOY_IMAGE" \
             --region="${_REGION}" \
             --project="$PROJECT_ID" \
             --port=8080 \
