@@ -49,6 +49,7 @@ curl -H "X-API-Key: ваш-ключ" \
 - [Cloud Run](https://console.cloud.google.com/run?project=cybertranspay)
 - [Artifact Registry](https://console.cloud.google.com/artifacts?project=cybertranspay)
 - [Secret Manager](https://console.cloud.google.com/security/secret-manager?project=cybertranspay)
+- [Cloud Build troubleshooting](../docs/CLOUD_BUILD.md)
 
 ## Аутентификация gcloud (один раз)
 

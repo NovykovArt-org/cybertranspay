@@ -5,6 +5,7 @@
 **/Pods/
 **/.gradle/
 Cargo.lock
+!backend/Cargo.lock
 
 # Environment
 .env

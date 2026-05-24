@@ -1,4 +1,5 @@
 project_id                   = "cybertranspay"
+project_number               = "1079379369218"
 region                       = "europe-west1"
 routing_engine_image_tag     = "latest"
 allow_public_routing_api     = false

@@ -4,6 +4,12 @@ variable "project_id" {
   default     = "cybertranspay"
 }
 
+variable "project_number" {
+  description = "GCP project number"
+  type        = string
+  default     = "1079379369218"
+}
+
 variable "region" {
   description = "Default region"
   type        = string

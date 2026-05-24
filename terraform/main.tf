@@ -17,8 +17,9 @@ module "artifact_registry" {
 }
 
 module "iam" {
-  source     = "./modules/iam"
-  project_id = var.project_id
+  source         = "./modules/iam"
+  project_id     = var.project_id
+  project_number = var.project_number
 
   depends_on = [module.project_apis]
 }
