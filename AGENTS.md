@@ -38,6 +38,7 @@ cd terraform && terraform fmt -check && terraform validate
 - Windows port `8080` is often occupied. Use Cloud Run proxy port `8081` for manual cloud checks.
 - Cloud Build manual deploy works through `scripts/update-routing-engine.cmd` / `.sh`.
 - Cloud Build trigger setup is available through `scripts/setup-cloudbuild-trigger.cmd` / `.sh`; GitHub connection in Cloud Build may still need one-time setup.
+- `terraform fmt -check -recursive` currently reports formatting drift in tracked `terraform/terraform.tfvars`; avoid normalizing it unless you intentionally want to touch environment-specific values.
 
 ### Local and cloud checks
 
