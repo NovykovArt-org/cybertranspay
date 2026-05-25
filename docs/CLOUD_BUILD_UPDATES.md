@@ -5,7 +5,37 @@
 
 ---
 
-## Быстрое обновление (Windows)
+## Первоначальная настройка автодеплоя (один раз)
+
+### Шаг 1 — IAM для Cloud Build
+
+```cmd
+scripts\grant-cloudbuild-permissions.cmd
+```
+
+### Шаг 2 — Подключить GitHub к Cloud Build
+
+1. Открой: https://console.cloud.google.com/cloud-build/triggers/connect?project=cybertranspay  
+2. Выбери **GitHub** → авторизуйся  
+3. Репозиторий: **`NovykovArt-org/cybertranspay`**
+
+### Шаг 3 — Создать trigger
+
+```cmd
+scripts\setup-cloudbuild-trigger.cmd
+```
+
+Готово. Каждый **push в `main`** автоматически: build → push образа → update Cloud Run.
+
+Проверить trigger:
+
+```cmd
+gcloud builds triggers list --region=europe-west1 --project=cybertranspay
+```
+
+---
+
+## Быстрое обновление вручную (Windows)
 
 После изменений в `backend/`:
 
@@ -38,13 +68,23 @@ gcloud builds submit --config=cloudbuild.yaml --project=cybertranspay
 ## Проверка после обновления
 
 **Proxy** (окно 1 — не закрывать):
+
 ```cmd
-gcloud run services proxy routing-engine --region=europe-west1 --project=cybertranspay --port=8080
+gcloud run services proxy routing-engine --region=europe-west1 --project=cybertranspay --port=8081
 ```
 
+> На Windows порт **8080** часто занят — используй **8081**.
+
 **Проверка** (окно 2):
+
 ```cmd
-curl http://127.0.0.1:8080/health
+curl http://127.0.0.1:8081/health
+```
+
+**Статус последней сборки:**
+
+```cmd
+gcloud builds list --region=europe-west1 --project=cybertranspay --limit=5
 ```
 
 ---
@@ -63,19 +103,15 @@ gcloud run deploy routing-engine --image=europe-west1-docker.pkg.dev/cybertransp
 
 ---
 
-## Автозапуск при push в GitHub (опционально)
+## Автозапуск при push (альтернатива скрипту)
 
-### Console
+Если `setup-cloudbuild-trigger.cmd` не сработал — создай trigger вручную в Console:  
+https://console.cloud.google.com/cloud-build/triggers?project=cybertranspay
 
-1. https://console.cloud.google.com/cloud-build/triggers?project=cybertranspay  
-2. **Create trigger**  
-3. Repository: `NovykovArt-org/cybertranspay`, branch `^main$`  
-4. Configuration: **Cloud Build configuration file** → `cloudbuild.yaml`  
-5. Save  
+- Branch: `^main$`
+- Config file: `cloudbuild.yaml`
 
-При каждом push в `main` — автоматическая сборка и обновление Cloud Run.
-
-### CLI (если GitHub уже подключён)
+Или CLI (после подключения GitHub):
 
 ```cmd
 gcloud builds triggers create github --name=routing-engine-main --repo-name=cybertranspay --repo-owner=NovykovArt-org --branch-pattern=^main$ --build-config=cloudbuild.yaml --region=europe-west1 --project=cybertranspay
