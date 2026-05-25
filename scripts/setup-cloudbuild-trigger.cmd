@@ -14,9 +14,12 @@ echo Project: %PROJECT_ID%
 echo Trigger: %TRIGGER_NAME% (branch ^main^)
 echo.
 
-echo [1/3] IAM permissions...
-call "%~dp0grant-cloudbuild-permissions.cmd"
-if errorlevel 1 goto :error
+echo [1/3] IAM permissions (skip with SKIP_IAM=1 if already granted)...
+if /I "%SKIP_IAM%"=="1" (
+  echo   Skipped — using existing IAM.
+) else (
+  call "%~dp0grant-cloudbuild-permissions.cmd"
+)
 
 echo.
 echo [2/3] Checking existing trigger...
@@ -52,8 +55,4 @@ echo FAILED to create trigger.
 echo Connect GitHub first:
 echo   https://console.cloud.google.com/cloud-build/triggers/connect?project=%PROJECT_ID%
 echo Then run this script again.
-exit /b 1
-
-:error
-echo FAILED.
 exit /b 1
