@@ -1,0 +1,8 @@
+project_id                   = "your-gcp-project-id"
+region                       = "europe-west1"
+routing_engine_image_tag     = "latest"
+allow_public_routing_api     = false
+auth_required                = true
+auth_api_keys                = "replace-with-long-random-key"
+create_auth_secret           = true
+github_app_installation_id   = 0

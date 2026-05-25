@@ -1,11 +1,16 @@
+import 'package:cybertranspay/config.dart';
+import 'package:cybertranspay/screens/quote_screen.dart';
+import 'package:cybertranspay/services/api_client.dart';
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const CyberTransPayApp());
+  runApp(CyberTransPayApp(api: ApiClient()));
 }
 
 class CyberTransPayApp extends StatelessWidget {
-  const CyberTransPayApp({super.key});
+  const CyberTransPayApp({super.key, required this.api});
+
+  final ApiClient api;
 
   @override
   Widget build(BuildContext context) {
@@ -15,22 +20,74 @@ class CyberTransPayApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      home: HomeShell(api: api),
     );
   }
 }
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class HomeShell extends StatefulWidget {
+  const HomeShell({super.key, required this.api});
+
+  final ApiClient api;
+
+  @override
+  State<HomeShell> createState() => _HomeShellState();
+}
+
+class _HomeShellState extends State<HomeShell> {
+  int _index = 0;
 
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      _WelcomeTab(apiBaseUrl: AppConfig.apiBaseUrl),
+      QuoteScreen(api: widget.api),
+    ];
+
     return Scaffold(
-      appBar: AppBar(title: const Text('CyberTransPay')),
-      body: const Center(
-        child: Text(
-          'Pre-MVP — instant cross-border payments\n(crypto ↔ fiat)',
-          textAlign: TextAlign.center,
+      body: pages[_index],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (i) => setState(() => _index = i),
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.home), label: 'Главная'),
+          NavigationDestination(icon: Icon(Icons.route), label: 'Маршруты'),
+        ],
+      ),
+    );
+  }
+}
+
+class _WelcomeTab extends StatelessWidget {
+  const _WelcomeTab({required this.apiBaseUrl});
+
+  final String apiBaseUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'CyberTransPay',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Мгновенные трансграничные платежи\ncrypto ↔ fiat',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            Text('API: $apiBaseUrl', style: Theme.of(context).textTheme.bodySmall),
+            if (!AppConfig.hasApiKey)
+              Text(
+                'API_KEY не задан — нужен, если AUTH_REQUIRED=true',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+          ],
         ),
       ),
     );
