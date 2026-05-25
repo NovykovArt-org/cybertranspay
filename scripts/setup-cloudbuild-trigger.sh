@@ -14,8 +14,12 @@ echo "Project: $PROJECT_ID"
 echo "Trigger: $TRIGGER_NAME (branch main)"
 echo
 
-echo "[1/3] IAM permissions..."
-bash "$ROOT/scripts/grant-cloudbuild-permissions.sh"
+echo "[1/3] IAM permissions (skip with SKIP_IAM=1 if already granted)..."
+if [[ "${SKIP_IAM:-}" == "1" ]]; then
+  echo "  Skipped - using existing IAM."
+else
+  bash "$ROOT/scripts/grant-cloudbuild-permissions.sh"
+fi
 
 echo
 echo "[2/3] Checking existing trigger..."

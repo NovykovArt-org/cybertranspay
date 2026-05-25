@@ -34,7 +34,7 @@ gcloud builds triggers create github ^
   --name=%TRIGGER_NAME% ^
   --repo-name=%REPO_NAME% ^
   --repo-owner=%REPO_OWNER% ^
-  --branch-pattern=^main$ ^
+  --branch-pattern=^^main$ ^
   --build-config=cloudbuild.yaml ^
   --region=%REGION% ^
   --project=%PROJECT_ID%

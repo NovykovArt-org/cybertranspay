@@ -41,16 +41,40 @@ terraform apply
 Из **корня** репозитория (не из `backend`):
 
 ```cmd
-cd C:\Users\tyom2001\Desktop\cybertranspay-final\cybertranspay
-gcloud builds submit --config=cloudbuild.yaml --project=cybertranspay
+cd C:\Users\tyom2001\Desktop\cybertranspay-deploy
+scripts\update-routing-engine.cmd
 ```
 
 Cloud Build выполнит:
 1. `docker-build` — Rust → образ
 2. `docker-push` → Artifact Registry
-3. `deploy-cloud-run` → сервис `routing-engine`
+3. `update-cloud-run` → сервис `routing-engine`
 
 Сборка Rust ~10–20 мин (машина `E2_HIGHCPU_8`).
+
+Ручной submit без `git pull`:
+
+```cmd
+gcloud builds submit --config=cloudbuild.yaml --project=cybertranspay
+```
+
+### Опционально — автодеплой при push в `main`
+
+Сначала подключите GitHub repository в Cloud Build Console:
+https://console.cloud.google.com/cloud-build/triggers/connect?project=cybertranspay
+
+Затем из корня репозитория:
+
+```cmd
+scripts\setup-cloudbuild-trigger.cmd
+```
+
+Если IAM уже выдан, можно пропустить повторную выдачу:
+
+```cmd
+set SKIP_IAM=1
+scripts\setup-cloudbuild-trigger.cmd
+```
 
 ---
 
@@ -66,6 +90,13 @@ Health (без ключа):
 
 ```cmd
 curl https://ВАШ-URL/health
+```
+
+Через локальный proxy (если порт `8080` занят, используйте `8081`):
+
+```cmd
+gcloud run services proxy routing-engine --region=europe-west1 --project=cybertranspay --port=8081
+curl http://127.0.0.1:8081/health
 ```
 
 Quote (с ключом из terraform):
