@@ -39,7 +39,7 @@ steps:
       - run
       - services
       - update
-      - routing-engine
+      - ${_SERVICE}
       - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:latest
       - --region=${_REGION}
       - --project=$PROJECT_ID

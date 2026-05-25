@@ -19,6 +19,8 @@ gcloud projects add-iam-policy-binding %PROJECT_ID% --member=serviceAccount:%COM
 echo Granting IAM to Cloud Build SA...
 gcloud projects add-iam-policy-binding %PROJECT_ID% --member=serviceAccount:%CLOUDBUILD_SA% --role=roles/artifactregistry.writer
 gcloud projects add-iam-policy-binding %PROJECT_ID% --member=serviceAccount:%CLOUDBUILD_SA% --role=roles/run.admin
+gcloud projects add-iam-policy-binding %PROJECT_ID% --member=serviceAccount:%CLOUDBUILD_SA% --role=roles/iam.serviceAccountUser
+gcloud projects add-iam-policy-binding %PROJECT_ID% --member=serviceAccount:%CLOUDBUILD_SA% --role=roles/logging.logWriter
 
 echo Granting Artifact Registry reader to Cloud Run service agent...
 gcloud projects add-iam-policy-binding %PROJECT_ID% --member=serviceAccount:service-1079379369218@serverless-robot-prod.iam.gserviceaccount.com --role=roles/artifactregistry.reader

@@ -9,7 +9,7 @@ Project: **cybertranspay** (`1079379369218`) · Region: **europe-west1**
 |-----|--------|---------|
 | `docker-push` | `denied` / permission denied | Grant `artifactregistry.writer` to **1079379369218-compute@developer.gserviceaccount.com** |
 | `docker-build` | `COPY Cargo.lock` failed | Fixed: `.gcloudignore` + Dockerfile without lockfile |
-| `deploy-cloud-run` | `NOT_FOUND: Service routing-engine` | Сначала `terraform apply`, либо deploy создаст минимальный сервис |
+| `update-cloud-run` | Permission denied / NOT_FOUND | Grant `run.admin` + `iam.serviceAccountUser` to Cloud Build SA; сервис должен существовать |
 | Image tag | Пустой тег `:`` | Используйте `$BUILD_ID`, не `$SHORT_SHA` (пуст при ручном submit) |
 
 ## IAM для Cloud Build
