@@ -1,16 +1,15 @@
 variable "project_id" {
-  description = "Google Cloud Project ID"
-  type        = string
-  default     = "cybertranspay-prod"
+  type    = string
+  default = "cybertranspay-prod"
 }
 
 variable "region" {
-  description = "Default region"
-  type        = string
-  default     = "europe-west1"
+  type    = string
+  default = "europe-west1"
 }
 
 variable "github_app_installation_id" {
+<<<<<<< HEAD
   description = "GitHub App Installation ID for Developer Connect"
   type        = number
   default     = 0
@@ -45,4 +44,8 @@ variable "create_auth_secret" {
   description = "Create Secret Manager secret for AUTH_API_KEYS"
   type        = bool
   default     = true
+=======
+  type      = string
+  sensitive = true
+>>>>>>> origin/main
 }

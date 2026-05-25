@@ -6,54 +6,80 @@ Rust workspace for CyberTransPay core services.
 |-------|-------------|
 | `routing-engine` | HTTP API for payment route quotes and health checks |
 
-## Routing engine
-
-### Live rates
-
-Spot rates from public APIs (60s cache):
-
-- **CoinGecko** — USDT, USDC, BTC → USD
-- **Frankfurter** — fiat crosses (USD base)
-
-### Authentication
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `AUTH_REQUIRED` | `false` locally | Require `X-API-Key` on `/v1/*` |
-| `AUTH_API_KEYS` | — | Comma-separated valid keys |
-| `PORT` | `8080` | HTTP port |
-
-`/health` is always public.
-
-### API
-
-`POST /v1/routes/quote`:
-
-```json
-{
-  "from_asset": "USDT",
-  "to_asset": "EUR",
-  "amount": 1000,
-  "preference": "cheapest"
-}
-```
-
-Response includes `spot_rate`, `rate_source`, `live_pricing`, `priced_at`, and ranked `routes`.
-
 ## Run locally
 
 ```bash
 cd backend
-export AUTH_REQUIRED=false
 cargo run -p routing-engine
 ```
 
-With auth:
+Health: `http://localhost:8080/health`
+
+## API key auth (optional)
+
+By default auth is **off**. Enable locally:
+
+```cmd
+set AUTH_REQUIRED=true
+set AUTH_API_KEYS=your-secret-key
+cargo run -p routing-engine
+```
+
+Cloud Run:
+
+```cmd
+scripts\set-routing-engine-auth.cmd
+```
+
+Quote with auth:
 
 ```bash
-export AUTH_REQUIRED=true
-export AUTH_API_KEYS=dev-secret-key
-curl -H 'X-API-Key: dev-secret-key' -X POST http://localhost:8080/v1/routes/quote \
-  -H 'Content-Type: application/json' \
-  -d '{"from_asset":"USDT","to_asset":"EUR","amount":1000,"preference":"fastest"}'
+curl -X POST http://localhost:8080/v1/routes/quote \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-secret-key" \
+  -d '{"from_asset":"USDT","to_asset":"EUR","amount":1000,"preference":"cheapest"}'
 ```
+
+`/health` is always public; `/v1/*` requires `X-API-Key` when `AUTH_REQUIRED=true`.
+
+## Assets and spot rate
+
+```bash
+curl http://localhost:8080/v1/assets -H "X-API-Key: your-secret-key"
+
+curl "http://localhost:8080/v1/rates/spot?from=USDT&to=EUR" -H "X-API-Key: your-secret-key"
+```
+
+Supported assets: USD, EUR, GBP, CHF, CNY, JPY, PLN, TRY, RUB, AED, USDT, USDC, BTC, ETH.
+
+## Live quote API
+
+```bash
+curl -X POST http://localhost:8080/v1/routes/quote \
+  -H "Content-Type: application/json" \
+  -d '{"from_asset":"USDT","to_asset":"EUR","amount":1000,"preference":"cheapest"}'
+```
+
+Response includes `quote_id` and `expires_at` (default TTL 300s, override with `QUOTE_TTL_SECS`).
+
+Fetch a stored quote:
+
+```bash
+curl http://localhost:8080/v1/quotes/{quote_id} -H "X-API-Key: your-secret-key"
+```
+
+## Mock transfers
+
+Execute a quoted route (mock — status is immediately `completed`):
+
+```bash
+curl -X POST http://localhost:8080/v1/transfers \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-secret-key" \
+  -d '{"quote_id":"<quote_id>","route_id":"stablecoin-tron"}'
+
+curl http://localhost:8080/v1/transfers/{transfer_id} -H "X-API-Key: your-secret-key"
+```
+
+- **Rates:** CoinGecko (USDT, USDC, BTC, ETH) + Frankfurter (fiat), cached 60s
+- **Routes:** ranked by `cheapest` | `fastest` | `compliant` (top 3)

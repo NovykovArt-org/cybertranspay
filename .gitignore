@@ -1,27 +1,73 @@
-# Dependencies
-**/target/
-**/build/
-**/.dart_tool/
-**/Pods/
-**/.gradle/
-Cargo.lock
-
-# Environment
-.env
-*.env.local
-
-# Terraform
-.terraform/
-*.tfstate
-*.tfstate.backup
-
-# Flutter SDK (local dev only)
-.flutter-sdk/
-
-# OS
+# ======================
+# General
+# ======================
 .DS_Store
 Thumbs.db
-
-# Logs
 *.log
-logs/
+*.tmp
+.env
+.env.local
+.routing-api-key.txt
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ======================
+# Terraform
+# ======================
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+crash.log
+terraform.tfvars
+terraform.tfvars.json
+*.tfvars.*
+!terraform.tfvars.example
+
+# ======================
+# Rust / Cargo
+# ======================
+**/target/
+**/Cargo.lock
+!backend/Cargo.lock
+
+# ======================
+# Flutter / Dart
+# ======================
+**/flutter_sdk/
+.flutter-sdk/
+**/.flutter-sdk/
+.dart_tool/
+**/build/
+**/ios/Flutter/App.framework/
+**/ios/Flutter/Flutter.framework/
+**/ios/Flutter/flutter_export_environment.sh
+pubspec.lock
+*.iml
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# ======================
+# Backend specific
+# ======================
+backend/.env
+backend/logs/
+
+# ======================
+# Smart Contracts (Solidity)
+# ======================
+smart-contracts/cache/
+smart-contracts/artifacts/
+smart-contracts/node_modules/
+smart-contracts/.env
+
+# ======================
+# OS & Misc
+# ======================
+*.pyc
+__pycache__/
+*.bak
+*.orig
+*.rej

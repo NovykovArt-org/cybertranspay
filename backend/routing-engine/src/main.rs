@@ -16,6 +16,7 @@ async fn main() {
         .init();
 
     let state = AppState::from_env();
+    let auth_required = state.auth.required;
     let auth = state.auth.clone();
 
     let cors = CorsLayer::new()
@@ -24,7 +25,12 @@ async fn main() {
         .allow_headers(Any);
 
     let protected = Router::new()
+        .route("/v1/assets", get(api::list_assets))
+        .route("/v1/rates/spot", get(api::spot_rate))
         .route("/v1/routes/quote", post(api::quote_routes))
+        .route("/v1/quotes/:quote_id", get(api::get_quote))
+        .route("/v1/transfers", post(api::create_transfer))
+        .route("/v1/transfers/:transfer_id", get(api::get_transfer))
         .route_layer(middleware::from_fn_with_state(auth, auth::require_api_key));
 
     let app = Router::new()
@@ -39,7 +45,9 @@ async fn main() {
         .and_then(|p| p.parse().ok())
         .unwrap_or(8080);
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
-    tracing::info!("routing-engine listening on {addr}");
+    tracing::info!(
+        "routing-engine listening on {addr} (auth_required={auth_required})"
+    );
     let listener = tokio::net::TcpListener::bind(addr).await.expect("bind");
     axum::serve(listener, app).await.expect("serve");
 }

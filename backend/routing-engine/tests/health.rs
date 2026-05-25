@@ -24,4 +24,5 @@ async fn health_returns_ok() {
     let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(json["status"], "ok");
     assert_eq!(json["live_rates"], false);
+    assert_eq!(json["auth_required"], false);
 }

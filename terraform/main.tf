@@ -1,6 +1,10 @@
-# Main Terraform Configuration
 terraform {
   required_version = ">= 1.9.0"
+
+  backend "gcs" {
+    bucket = "cybertranspay-terraform-state"
+    prefix = "terraform/state"
+  }
 }
 
 module "project_apis" {
@@ -56,11 +60,12 @@ module "gke" {
   depends_on = [module.project_apis]
 }
 
-module "developer_connect" {
-  source                     = "./modules/developer_connect"
-  project_id                 = var.project_id
-  region                     = var.region
-  github_app_installation_id = var.github_app_installation_id
-
-  depends_on = [module.project_apis]
-}
+# Disabled until GitHub App installation ID is configured.
+# module "developer_connect" {
+#   source                     = "./modules/developer_connect"
+#   project_id                 = var.project_id
+#   region                     = var.region
+#   github_app_installation_id = var.github_app_installation_id
+#
+#   depends_on = [module.project_apis]
+# }

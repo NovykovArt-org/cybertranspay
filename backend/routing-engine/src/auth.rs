@@ -90,3 +90,21 @@ pub async fn require_api_key(
             .into_response(),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn disabled_auth_accepts_any_key_check() {
+        let auth = AuthConfig::disabled();
+        assert!(!auth.required);
+    }
+
+    #[test]
+    fn for_test_validates_key() {
+        let auth = AuthConfig::for_test("secret");
+        assert!(auth.is_valid("secret"));
+        assert!(!auth.is_valid("wrong"));
+    }
+}

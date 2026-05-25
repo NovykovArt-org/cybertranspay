@@ -1,18 +1,25 @@
 pub mod api;
+pub mod assets;
 pub mod auth;
 pub mod domain;
 pub mod engine;
+pub mod quotes;
 pub mod rates;
+pub mod transfers;
 
 use axum::{extract::State, http::StatusCode, Json};
 use auth::AuthConfig;
+use quotes::QuoteStore;
 use rates::LiveRates;
 use serde::Serialize;
+use transfers::TransferStore;
 
 #[derive(Clone)]
 pub struct AppState {
     pub rates: LiveRates,
     pub auth: AuthConfig,
+    pub quotes: QuoteStore,
+    pub transfers: TransferStore,
 }
 
 impl AppState {
@@ -20,6 +27,8 @@ impl AppState {
         Self {
             rates: LiveRates::new(),
             auth: AuthConfig::from_env(),
+            quotes: QuoteStore::from_env(),
+            transfers: TransferStore::new(),
         }
     }
 
@@ -27,6 +36,8 @@ impl AppState {
         Self {
             rates: LiveRates::mock(0.92),
             auth: AuthConfig::disabled(),
+            quotes: QuoteStore::with_ttl(chrono::Duration::minutes(5)),
+            transfers: TransferStore::new(),
         }
     }
 }
