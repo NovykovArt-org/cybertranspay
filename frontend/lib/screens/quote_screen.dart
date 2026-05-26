@@ -118,7 +118,6 @@ class _QuoteScreenState extends State<QuoteScreen> {
       setState(() {
         _lastTransfer = transfer;
         _executingRouteId = null;
-        _transferStatusMessage = 'Перевод создан';
       });
     } on ApiException catch (e) {
       if (!mounted) return;
