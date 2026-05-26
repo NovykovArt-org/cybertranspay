@@ -17,9 +17,14 @@ class _QuoteScreenState extends State<QuoteScreen> {
   final _amountController = TextEditingController(text: '1000');
   String _preference = 'cheapest';
   bool _loading = false;
+  String? _executingRouteId;
+  bool _refreshingTransfer = false;
   String? _error;
+  String? _transferError;
+  String? _transferStatusMessage;
   List<RouteQuote> _routes = [];
   QuoteResponse? _lastQuote;
+  TransferResponse? _lastTransfer;
   bool? _apiHealthy;
 
   @override
@@ -47,6 +52,9 @@ class _QuoteScreenState extends State<QuoteScreen> {
     setState(() {
       _loading = true;
       _error = null;
+      _transferError = null;
+      _transferStatusMessage = null;
+      _lastTransfer = null;
     });
 
     try {
@@ -71,6 +79,7 @@ class _QuoteScreenState extends State<QuoteScreen> {
         _loading = false;
         _routes = [];
         _lastQuote = null;
+        _lastTransfer = null;
       });
     } catch (e) {
       if (!mounted) return;
@@ -79,6 +88,81 @@ class _QuoteScreenState extends State<QuoteScreen> {
         _loading = false;
         _routes = [];
         _lastQuote = null;
+        _lastTransfer = null;
+      });
+    }
+  }
+
+  Future<void> _createTransfer(RouteQuote route) async {
+    final quote = _lastQuote;
+    if (quote == null) {
+      setState(() => _transferError = 'Сначала получите котировку маршрута');
+      return;
+    }
+
+    setState(() {
+      _executingRouteId = route.routeId;
+      _transferError = null;
+      _transferStatusMessage = null;
+      _lastTransfer = null;
+    });
+
+    try {
+      final transfer = await widget.api.createTransfer(
+        CreateTransferRequest(
+          quoteId: quote.quoteId,
+          routeId: route.routeId,
+        ),
+      );
+      if (!mounted) return;
+      setState(() {
+        _lastTransfer = transfer;
+        _executingRouteId = null;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _transferError = e.message;
+        _executingRouteId = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _transferError = 'Не удалось выполнить перевод: $e';
+        _executingRouteId = null;
+      });
+    }
+  }
+
+  Future<void> _refreshTransferStatus() async {
+    final transfer = _lastTransfer;
+    if (transfer == null) return;
+
+    setState(() {
+      _refreshingTransfer = true;
+      _transferError = null;
+      _transferStatusMessage = null;
+    });
+
+    try {
+      final refreshed = await widget.api.getTransfer(transfer.transferId);
+      if (!mounted) return;
+      setState(() {
+        _lastTransfer = refreshed;
+        _refreshingTransfer = false;
+        _transferStatusMessage = 'Статус обновлён';
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _transferError = e.message;
+        _refreshingTransfer = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _transferError = 'Не удалось обновить статус: $e';
+        _refreshingTransfer = false;
       });
     }
   }
@@ -93,24 +177,29 @@ class _QuoteScreenState extends State<QuoteScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Маршрутизация'),
-        actions: [
-          Icon(
-            _apiHealthy == true
-                ? Icons.cloud_done
-                : _apiHealthy == false
-                    ? Icons.cloud_off
-                    : Icons.cloud_queue,
-            color: _apiHealthy == true ? Colors.green : Colors.orange,
-          ),
-          const SizedBox(width: 16),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+    return SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
         children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Маршрутизация',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+              ),
+              Icon(
+                _apiHealthy == true
+                    ? Icons.cloud_done
+                    : _apiHealthy == false
+                        ? Icons.cloud_off
+                        : Icons.cloud_queue,
+                color: _apiHealthy == true ? Colors.green : Colors.orange,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           TextField(
             controller: _fromController,
             decoration: const InputDecoration(labelText: 'От (актив)'),
@@ -153,12 +242,19 @@ class _QuoteScreenState extends State<QuoteScreen> {
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
-            Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            Text(_error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ],
           const SizedBox(height: 20),
           if (_routes.isEmpty && !_loading && _error == null)
             const Text('Выберите пару активов и запросите котировку маршрута.'),
           if (_lastQuote != null) ...[
+            Text(
+              'Quote: ${_lastQuote!.quoteId} · expires: '
+              '${_lastQuote!.expiresAt.toLocal().toIso8601String().substring(0, 16)}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 4),
             Text(
               'Курс: ${_lastQuote!.spotRate.toStringAsFixed(4)} (${_lastQuote!.rateSource})'
               '${_lastQuote!.livePricing ? ' · live' : ''}',
@@ -166,7 +262,31 @@ class _QuoteScreenState extends State<QuoteScreen> {
             ),
             const SizedBox(height: 8),
           ],
-          ..._routes.map(_RouteCard.new),
+          if (_transferError != null) ...[
+            Text(
+              _transferError!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+            const SizedBox(height: 8),
+          ],
+          if (_lastTransfer != null) ...[
+            _TransferReceipt(
+              _lastTransfer!,
+              refreshing: _refreshingTransfer,
+              statusMessage: _transferStatusMessage,
+              onRefresh: _refreshingTransfer ? null : _refreshTransferStatus,
+            ),
+            const SizedBox(height: 12),
+          ],
+          ..._routes.map(
+            (route) => _RouteCard(
+              route,
+              executing: _executingRouteId == route.routeId,
+              onCreateTransfer: _executingRouteId == null
+                  ? () => _createTransfer(route)
+                  : null,
+            ),
+          ),
         ],
       ),
     );
@@ -174,8 +294,14 @@ class _QuoteScreenState extends State<QuoteScreen> {
 }
 
 class _RouteCard extends StatelessWidget {
-  const _RouteCard(this.route);
+  const _RouteCard(
+    this.route, {
+    required this.executing,
+    required this.onCreateTransfer,
+  });
   final RouteQuote route;
+  final bool executing;
+  final VoidCallback? onCreateTransfer;
 
   @override
   Widget build(BuildContext context) {
@@ -198,6 +324,74 @@ class _RouteCard extends StatelessWidget {
               'К получению: ${route.estimatedReceive.toStringAsFixed(2)}',
               style: Theme.of(context).textTheme.titleSmall,
             ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: onCreateTransfer,
+              icon: executing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.send),
+              label: Text(executing ? 'Выполняем...' : 'Выполнить перевод'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TransferReceipt extends StatelessWidget {
+  const _TransferReceipt(
+    this.transfer, {
+    required this.refreshing,
+    required this.statusMessage,
+    required this.onRefresh,
+  });
+
+  final TransferResponse transfer;
+  final bool refreshing;
+  final String? statusMessage;
+  final VoidCallback? onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Theme.of(context).colorScheme.secondaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Перевод создан',
+                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 6),
+            Text('ID: ${transfer.transferId}'),
+            Text('Статус: ${transfer.status}'),
+            Text('Маршрут: ${transfer.routeId}'),
+            Text(
+              'Сумма: ${transfer.amount.toStringAsFixed(2)} '
+              '${transfer.fromAsset} → ${transfer.estimatedReceive.toStringAsFixed(2)} '
+              '${transfer.toAsset}',
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: onRefresh,
+              icon: refreshing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh),
+              label: Text(refreshing ? 'Обновляем...' : 'Обновить статус'),
+            ),
+            if (statusMessage != null) ...[
+              const SizedBox(height: 6),
+              Text(statusMessage!),
+            ],
           ],
         ),
       ),

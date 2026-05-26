@@ -40,7 +40,7 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      _WelcomeTab(apiBaseUrl: AppConfig.apiBaseUrl),
+      const _WelcomeTab(apiBaseUrl: AppConfig.apiBaseUrl),
       QuoteScreen(api: widget.api),
     ];
 

@@ -8,6 +8,7 @@ Thumbs.db
 .env
 .env.local
 .routing-api-key.txt
+.data/
 .vscode/
 .idea/
 *.swp

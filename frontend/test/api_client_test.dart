@@ -15,6 +15,8 @@ void main() {
         return http.Response(
           '''
 {
+  "quote_id": "quote-1",
+  "expires_at": "2026-05-26T08:30:00Z",
   "routes": [{
     "route_id": "stablecoin-tron",
     "label": "USDT",
@@ -47,6 +49,77 @@ void main() {
     );
 
     expect(quote.routes, hasLength(1));
+    expect(quote.quoteId, 'quote-1');
     expect(quote.routes.first.routeId, 'stablecoin-tron');
+  });
+
+  test('createTransfer parses response', () async {
+    final client = ApiClient(
+      baseUrl: 'http://test',
+      client: MockClient((request) async {
+        expect(request.url.path, '/v1/transfers');
+        return http.Response(
+          '''
+{
+  "transfer_id": "transfer-1",
+  "quote_id": "quote-1",
+  "route_id": "stablecoin-tron",
+  "from_asset": "USDT",
+  "to_asset": "EUR",
+  "amount": 1000,
+  "estimated_receive": 918.62,
+  "status": "completed",
+  "created_at": "2026-05-26T08:31:00Z"
+}
+''',
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }),
+    );
+
+    final transfer = await client.createTransfer(
+      const CreateTransferRequest(
+        quoteId: 'quote-1',
+        routeId: 'stablecoin-tron',
+      ),
+    );
+
+    expect(transfer.transferId, 'transfer-1');
+    expect(transfer.status, 'completed');
+    expect(transfer.estimatedReceive, 918.62);
+  });
+
+  test('getTransfer parses response', () async {
+    final client = ApiClient(
+      baseUrl: 'http://test',
+      client: MockClient((request) async {
+        expect(request.method, 'GET');
+        expect(request.url.path, '/v1/transfers/transfer-1');
+        return http.Response(
+          '''
+{
+  "transfer_id": "transfer-1",
+  "quote_id": "quote-1",
+  "route_id": "stablecoin-tron",
+  "from_asset": "USDT",
+  "to_asset": "EUR",
+  "amount": 1000,
+  "estimated_receive": 918.62,
+  "status": "completed",
+  "created_at": "2026-05-26T08:31:00Z"
+}
+''',
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }),
+    );
+
+    final transfer = await client.getTransfer('transfer-1');
+
+    expect(transfer.transferId, 'transfer-1');
+    expect(transfer.routeId, 'stablecoin-tron');
+    expect(transfer.status, 'completed');
   });
 }

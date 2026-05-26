@@ -14,9 +14,11 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustc --version
+          cargo --version
 
       - name: Check Rust code
         run: |
@@ -28,6 +30,11 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.x'
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.9.0'
 
       - name: Check Flutter
         run: |

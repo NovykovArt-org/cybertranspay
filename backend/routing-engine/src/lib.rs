@@ -7,8 +7,8 @@ pub mod quotes;
 pub mod rates;
 pub mod transfers;
 
-use axum::{extract::State, http::StatusCode, Json};
 use auth::AuthConfig;
+use axum::{extract::State, http::StatusCode, Json};
 use quotes::QuoteStore;
 use rates::LiveRates;
 use serde::Serialize;
@@ -28,7 +28,7 @@ impl AppState {
             rates: LiveRates::new(),
             auth: AuthConfig::from_env(),
             quotes: QuoteStore::from_env(),
-            transfers: TransferStore::new(),
+            transfers: TransferStore::from_env(),
         }
     }
 
