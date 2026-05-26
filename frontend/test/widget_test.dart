@@ -99,7 +99,7 @@ void main() {
     await tester.tap(find.text('Выполнить перевод'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Success Aurora'), findsOneWidget);
+    expect(find.text('Перевод завершён'), findsOneWidget);
     expect(find.text('Статус: completed'), findsOneWidget);
     expect(find.text('Завершён · 100%'), findsOneWidget);
   });

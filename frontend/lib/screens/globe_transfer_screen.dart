@@ -711,28 +711,28 @@ class _ProgressCard extends StatelessWidget {
     return Card(
       color: Theme.of(context).colorScheme.secondaryContainer,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Линия перевода',
                 style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 6),
+            const SizedBox(height: 10),
             Text(
               '${draft.fromCountry?.iso2 ?? '--'} ${draft.fromCurrency ?? '--'}'
               ' → ${draft.toCountry?.iso2 ?? '--'} ${draft.toCurrency ?? '--'}',
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             LinearProgressIndicator(
               value: progress.percent,
               color: progress.color,
               backgroundColor: Colors.white.withOpacity(0.45),
               minHeight: 8,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text('${progress.label} · ${(progress.percent * 100).round()}%'),
             if (transfer != null) ...[
-              const SizedBox(height: 6),
+              const SizedBox(height: 10),
               Text('ID: ${transfer!.transferId}'),
               Text('Статус: ${transfer!.status}'),
               Text(
@@ -741,7 +741,7 @@ class _ProgressCard extends StatelessWidget {
                 '${transfer!.estimatedReceive.toStringAsFixed(2)} '
                 '${transfer!.toAsset}',
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               OutlinedButton.icon(
                 onPressed: onRefresh,
                 icon: refreshing
@@ -755,7 +755,7 @@ class _ProgressCard extends StatelessWidget {
               ),
             ],
             if (statusMessage != null) ...[
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Text(statusMessage!),
             ],
           ],
@@ -1046,7 +1046,7 @@ class SuccessAuroraOverlay extends StatelessWidget {
                 borderRadius: BorderRadius.circular(999),
               ),
               child: const Text(
-                'Success Aurora',
+                'Перевод завершён',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
