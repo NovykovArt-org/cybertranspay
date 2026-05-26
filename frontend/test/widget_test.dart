@@ -75,7 +75,7 @@ void main() {
   testWidgets('creates transfer from selected route', (tester) async {
     await tester.pumpWidget(CyberTransPayApp(api: FakeApiClient()));
 
-    await tester.tap(find.text('Маршруты'));
+    await tester.tap(find.text('Маршрут'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Подобрать маршрут'));
