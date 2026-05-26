@@ -41,7 +41,7 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     final pages = [
       const _WelcomeTab(apiBaseUrl: AppConfig.apiBaseUrl),
-      QuoteScreen(api: widget.api),
+      const QuoteScreen(api: widget.api),
     ];
 
     return Scaffold(
