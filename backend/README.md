@@ -42,6 +42,26 @@ curl -X POST http://localhost:8080/v1/routes/quote \
 
 `/health` is always public; `/v1/*` requires `X-API-Key` when `AUTH_REQUIRED=true`.
 
+## Quote and transfer persistence
+
+By default, quotes and mock transfers are kept in memory. To persist them as
+JSON files across process restarts, set either a shared data directory:
+
+```bash
+CTP_DATA_DIR=.data cargo run -p routing-engine
+```
+
+or explicit file paths:
+
+```bash
+QUOTE_STORE_PATH=.data/quotes.json \
+TRANSFER_STORE_PATH=.data/transfers.json \
+cargo run -p routing-engine
+```
+
+For Cloud Run, use a mounted writable volume for these paths; the container
+filesystem alone is ephemeral.
+
 ## Assets and spot rate
 
 ```bash
