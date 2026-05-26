@@ -63,9 +63,32 @@ class FakeApiClient extends ApiClient {
 }
 
 void main() {
-  testWidgets('shows app title', (tester) async {
+  testWidgets('shows globe transfer home screen', (tester) async {
     await tester.pumpWidget(CyberTransPayApp(api: ApiClient()));
-    expect(find.text('CyberTransPay'), findsOneWidget);
+    expect(find.text('Глобус переводов'), findsOneWidget);
+    expect(find.text('FromDialog'), findsOneWidget);
+    expect(find.text('ToDialog'), findsOneWidget);
+    expect(find.text('Линия перевода'), findsOneWidget);
+  });
+
+  testWidgets('creates transfer from globe flow', (tester) async {
+    await tester.pumpWidget(CyberTransPayApp(api: FakeApiClient()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Получить котировку'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('USDT via Tron'), findsOneWidget);
+    expect(find.textContaining('Quote: quote-1'), findsOneWidget);
+
+    await tester.drag(find.byType(ListView).first, const Offset(0, -450));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Выполнить перевод'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Success Aurora'), findsOneWidget);
+    expect(find.text('Статус: completed'), findsOneWidget);
+    expect(find.text('Завершён · 100%'), findsOneWidget);
   });
 
   testWidgets('creates transfer from selected route', (tester) async {
