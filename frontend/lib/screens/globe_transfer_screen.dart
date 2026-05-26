@@ -261,7 +261,7 @@ class _GlobeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final globeSize = math.min(constraints.maxWidth, 420.0);
+        final globeSize = math.min(constraints.maxWidth, 320.0);
         return Center(
           child: SizedBox.square(
             dimension: globeSize,
