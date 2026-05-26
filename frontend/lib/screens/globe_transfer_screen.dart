@@ -803,16 +803,23 @@ class _GlobeRouteCard extends StatelessWidget {
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: 12),
-            FilledButton.icon(
+            FilledButton(
               onPressed: onCreateTransfer,
-              icon: executing
-                  ? const SizedBox(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (executing)
+                    const SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.send),
-              label: Text(executing ? 'Выполняем...' : 'Выполнить перевод'),
+                  else
+                    const Icon(Icons.send),
+                  const SizedBox(width: 8),
+                  Text(executing ? 'Выполняем...' : 'Выполнить перевод'),
+                ],
+              ),
             ),
           ],
         ),
