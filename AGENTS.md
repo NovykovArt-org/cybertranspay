@@ -4,31 +4,58 @@
 
 ### Project overview
 
-CyberTransPay is a pre-MVP cross-border payments platform. The repository currently contains **only Terraform infrastructure-as-code** and documentation — no application source code (`backend/`, `frontend/`, `smart-contracts/`) exists yet.
+CyberTransPay is a pre-MVP cross-border payments platform. The repository now includes:
+
+- `backend/` — Rust workspace with the `routing-engine` Axum HTTP API.
+- `frontend/` — Flutter client for mobile, web, and desktop targets.
+- `terraform/` — Google Cloud infrastructure-as-code.
+- `smart-contracts/` — placeholder/documentation area for future multi-chain work.
+- `docs/` — project and deployment documentation.
 
 ### Development tooling
 
-- **Terraform >= 1.9.0** is the only required development tool. It is installed system-wide via the HashiCorp APT repository.
-- There are no `package.json`, `Cargo.toml`, `pubspec.yaml`, or other application dependency files.
+- **Rust stable >= 1.95** for backend development and tests.
+- **Flutter 3.24.x** with Dart 3.5.x for frontend development and tests.
+- **Terraform 1.9.x** for infrastructure validation.
+- There is no `package.json`; JavaScript/Node tooling is not currently part of this repo.
 
 ### Running checks (matching CI/CD)
 
-The CI/CD pipeline (`.github/workflows/ci-cd.yml`) runs three conditional checks. Only the Terraform check is currently relevant:
+The CI/CD pipeline (`.github/workflows/ci-cd.yml`) runs Rust, Flutter, and Terraform checks:
 
 ```sh
-cd terraform && terraform fmt -check && terraform validate
+cd backend && cargo test --all
+cd frontend && flutter pub get && flutter analyze && flutter test
+cd terraform && terraform fmt -check -recursive && terraform init -backend=false && terraform validate
 ```
 
-- `terraform fmt -check -recursive` — linting/formatting check.
-- `terraform init -backend=false` then `terraform validate` — structural validation without connecting to the GCS backend.
+- `cargo test --all` — runs all Rust workspace tests.
+- `flutter pub get && flutter analyze && flutter test` — resolves frontend dependencies, runs analyzer, and executes Flutter tests.
+- `terraform fmt -check -recursive` — checks Terraform formatting.
+- `terraform init -backend=false && terraform validate` — validates Terraform without connecting to the GCS backend.
+
+### Running services locally
+
+Backend routing engine:
+
+```sh
+cd backend
+cargo run -p routing-engine
+```
+
+The backend listens on `PORT` or defaults to `8080`; `/health` is public.
+
+Frontend:
+
+```sh
+cd frontend
+flutter run \
+  --dart-define=API_BASE_URL=http://localhost:8080 \
+  --dart-define=API_KEY=your-secret-key
+```
+
+`API_KEY` is only needed when backend auth is enabled with `AUTH_REQUIRED=true`.
 
 ### Known pre-existing issues
 
-- **Duplicate backend block**: Both `terraform/backend.tf` and `terraform/providers.tf` define a `backend "gcs"` block. `terraform init` fails with "Duplicate 'backend' configuration block".
-- **Missing module variables**: Terraform modules under `terraform/modules/` do not declare `variable` blocks for `project_id`, `region`, or `github_app_installation_id`, but `terraform/main.tf` passes these arguments, causing "Unsupported argument" errors during init/validate.
-- **Formatting drift**: Several `.tf` files do not pass `terraform fmt -check`.
-- The CI/CD pipeline gracefully handles these with `|| echo "Terraform skipped"`.
-
-### No backend/frontend to run
-
-Until `backend/` (Rust/Axum) or `frontend/` (Flutter) directories are created, there are no services to start or test beyond Terraform validation.
+No known always-failing local checks are currently documented. If a check fails, treat it as actionable unless a newer note in this file says otherwise.
