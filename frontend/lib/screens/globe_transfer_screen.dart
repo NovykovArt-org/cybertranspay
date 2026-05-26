@@ -270,16 +270,23 @@ class _GlobeTransferScreenState extends State<GlobeTransferScreen> {
             onCountryTap: _selectCountry,
           ),
           const SizedBox(height: 16),
-          FilledButton.icon(
+          FilledButton(
             onPressed: _loading ? null : _fetchQuote,
-            icon: _loading
-                ? const SizedBox(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_loading)
+                  const SizedBox(
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Icon(Icons.travel_explore),
-            label: const Text('Получить котировку'),
+                else
+                  const Icon(Icons.travel_explore),
+                const SizedBox(width: 8),
+                Text(_loading ? 'Загружаем...' : 'Получить котировку'),
+              ],
+            ),
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
