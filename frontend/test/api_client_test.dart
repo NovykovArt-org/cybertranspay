@@ -68,7 +68,7 @@ void main() {
   "to_asset": "EUR",
   "amount": 1000,
   "estimated_receive": 918.62,
-  "status": "completed",
+  "status": "pending",
   "created_at": "2026-05-26T08:31:00Z"
 }
 ''',
@@ -86,7 +86,7 @@ void main() {
     );
 
     expect(transfer.transferId, 'transfer-1');
-    expect(transfer.status, 'completed');
+    expect(transfer.status, 'pending');
     expect(transfer.estimatedReceive, 918.62);
   });
 

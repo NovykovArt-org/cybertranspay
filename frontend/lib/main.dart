@@ -51,7 +51,7 @@ class _HomeShellState extends State<HomeShell> {
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home), label: 'Главная'),
-          NavigationDestination(icon: Icon(Icons.route), label: 'Маршруты'),
+          NavigationDestination(icon: Icon(Icons.route), label: 'Маршрут'),
         ],
       ),
     );
