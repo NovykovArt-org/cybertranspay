@@ -44,3 +44,15 @@ variable "create_auth_secret" {
   type        = bool
   default     = true
 }
+
+variable "enable_routing_engine_persistence" {
+  description = "Mount a Cloud Storage bucket into Cloud Run for quote/transfer JSON persistence"
+  type        = bool
+  default     = true
+}
+
+variable "routing_engine_persistence_bucket_name" {
+  description = "Optional explicit Cloud Storage bucket name for routing-engine persistence"
+  type        = string
+  default     = ""
+}

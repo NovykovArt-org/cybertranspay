@@ -56,6 +56,8 @@ terraform output artifact_registry_docker
 | `auth_required` | `true` — обязательный заголовок `X-API-Key` |
 | `auth_api_keys` | Ключи через запятую → Secret Manager |
 | `routing_engine_image_tag` | Тег Docker-образа в Artifact Registry |
+| `enable_routing_engine_persistence` | `true` — создать bucket и смонтировать его в Cloud Run |
+| `routing_engine_persistence_bucket_name` | Опциональное имя bucket; по умолчанию `${project_id}-routing-engine-data` |
 
 ## 3. Сборка и публикация образа
 
@@ -107,6 +109,21 @@ flutter run -d chrome \
 ```
 
 Для production используйте HTTPS URL из `routing_engine_url` и ограничьте CORS на backend (сейчас `*` — только для разработки).
+
+## 6. Persistence в Cloud Run
+
+Terraform создаёт Cloud Storage bucket, монтирует его в Cloud Run по пути
+`/data/cybertranspay` и выставляет `CTP_DATA_DIR=/data/cybertranspay`.
+`routing-engine` хранит там:
+
+- `quotes.json`
+- `transfers.json`
+
+Проверить bucket:
+
+```bash
+terraform -chdir=terraform output routing_engine_persistence_bucket
+```
 
 ## Архитектура
 

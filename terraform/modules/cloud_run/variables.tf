@@ -40,3 +40,18 @@ variable "api_keys_secret_id" {
   type    = string
   default = ""
 }
+
+variable "enable_persistence" {
+  type    = bool
+  default = true
+}
+
+variable "persistence_bucket_name" {
+  type    = string
+  default = ""
+}
+
+variable "persistence_mount_path" {
+  type    = string
+  default = "/data/cybertranspay"
+}

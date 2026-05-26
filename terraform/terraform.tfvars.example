@@ -6,3 +6,5 @@ auth_required                = true
 auth_api_keys                = "replace-with-long-random-key"
 create_auth_secret           = true
 github_app_installation_id   = 0
+enable_routing_engine_persistence = true
+routing_engine_persistence_bucket_name = ""
