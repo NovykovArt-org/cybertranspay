@@ -92,6 +92,7 @@ void main() {
     expect(find.text('Перевод создан'), findsOneWidget);
     expect(find.text('ID: transfer-1'), findsOneWidget);
     expect(find.text('Статус: pending'), findsOneWidget);
+    expect(find.text('Перевод уже создан'), findsOneWidget);
 
     await tester.tap(find.text('Обновить статус'));
     await tester.pumpAndSettle();

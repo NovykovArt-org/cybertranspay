@@ -282,9 +282,11 @@ class _QuoteScreenState extends State<QuoteScreen> {
             (route) => _RouteCard(
               route,
               executing: _executingRouteId == route.routeId,
-              onCreateTransfer: _executingRouteId == null
-                  ? () => _createTransfer(route)
-                  : null,
+              transferCreated: _lastTransfer != null,
+              onCreateTransfer:
+                  _executingRouteId == null && _lastTransfer == null
+                      ? () => _createTransfer(route)
+                      : null,
             ),
           ),
         ],
@@ -297,10 +299,12 @@ class _RouteCard extends StatelessWidget {
   const _RouteCard(
     this.route, {
     required this.executing,
+    required this.transferCreated,
     required this.onCreateTransfer,
   });
   final RouteQuote route;
   final bool executing;
+  final bool transferCreated;
   final VoidCallback? onCreateTransfer;
 
   @override
@@ -327,14 +331,22 @@ class _RouteCard extends StatelessWidget {
             const SizedBox(height: 12),
             FilledButton.icon(
               onPressed: onCreateTransfer,
-              icon: executing
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.send),
-              label: Text(executing ? 'Выполняем...' : 'Выполнить перевод'),
+              icon: transferCreated
+                  ? const Icon(Icons.check_circle)
+                  : executing
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.send),
+              label: Text(
+                transferCreated
+                    ? 'Перевод уже создан'
+                    : executing
+                        ? 'Выполняем...'
+                        : 'Выполнить перевод',
+              ),
             ),
           ],
         ),
