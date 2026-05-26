@@ -4,31 +4,44 @@
 
 ### Project overview
 
-CyberTransPay is a pre-MVP cross-border payments platform. The repository currently contains **only Terraform infrastructure-as-code** and documentation — no application source code (`backend/`, `frontend/`, `smart-contracts/`) exists yet.
+CyberTransPay is a pre-MVP cross-border payments platform. The repository currently contains:
+
+- `backend/` — Rust workspace with the Axum `routing-engine` service.
+- `frontend/` — Flutter client with quote UI and API client tests.
+- `terraform/` — Google Cloud infrastructure.
+- `scripts/` — Cloud Build, Cloud Run, and IAM helper scripts.
+- `docs/` — deployment and product documentation.
 
 ### Development tooling
 
-- **Terraform >= 1.9.0** is the only required development tool. It is installed system-wide via the HashiCorp APT repository.
-- There are no `package.json`, `Cargo.toml`, `pubspec.yaml`, or other application dependency files.
+- **Rust stable** is required for backend checks.
+- **Flutter 3.24.x** is used by CI for frontend checks.
+- **Terraform >= 1.9.0** is required for infrastructure checks.
+- **gcloud CLI** is required for Cloud Build / Cloud Run deployment scripts.
 
 ### Running checks (matching CI/CD)
 
-The CI/CD pipeline (`.github/workflows/ci-cd.yml`) runs three conditional checks. Only the Terraform check is currently relevant:
+The CI/CD pipeline (`.github/workflows/ci-cd.yml`) runs these checks when the matching directories exist:
 
 ```sh
+cd backend && cargo test --all
+cd frontend && flutter pub get && flutter analyze && flutter test
 cd terraform && terraform fmt -check && terraform validate
 ```
 
-- `terraform fmt -check -recursive` — linting/formatting check.
-- `terraform init -backend=false` then `terraform validate` — structural validation without connecting to the GCS backend.
+- Backend: `cargo test --all`.
+- Frontend: `flutter pub get`, `flutter analyze`, and `flutter test`.
+- Terraform: `terraform fmt -check -recursive`, `terraform init -backend=false`, and `terraform validate`.
 
 ### Known pre-existing issues
 
-- **Duplicate backend block**: Both `terraform/backend.tf` and `terraform/providers.tf` define a `backend "gcs"` block. `terraform init` fails with "Duplicate 'backend' configuration block".
-- **Missing module variables**: Terraform modules under `terraform/modules/` do not declare `variable` blocks for `project_id`, `region`, or `github_app_installation_id`, but `terraform/main.tf` passes these arguments, causing "Unsupported argument" errors during init/validate.
-- **Formatting drift**: Several `.tf` files do not pass `terraform fmt -check`.
-- The CI/CD pipeline gracefully handles these with `|| echo "Terraform skipped"`.
+- Windows port `8080` is often occupied. Use Cloud Run proxy port `8081` for manual cloud checks.
+- Cloud Build manual deploy works through `scripts/update-routing-engine.cmd` / `.sh`.
+- Cloud Build trigger setup is available through `scripts/setup-cloudbuild-trigger.cmd` / `.sh`; GitHub connection in Cloud Build may still need one-time setup.
+- `terraform fmt -check -recursive` currently reports formatting drift in tracked `terraform/terraform.tfvars`; avoid normalizing it unless you intentionally want to touch environment-specific values.
 
-### No backend/frontend to run
+### Local and cloud checks
 
-Until `backend/` (Rust/Axum) or `frontend/` (Flutter) directories are created, there are no services to start or test beyond Terraform validation.
+- Local backend: `cd backend && cargo run -p routing-engine` (defaults to port `8080`, auth disabled unless env vars are set).
+- Cloud proxy: `gcloud run services proxy routing-engine --region=europe-west1 --project=cybertranspay --port=8081`.
+- Cloud API calls to `/v1/*` require `X-API-Key`; never commit real API keys.

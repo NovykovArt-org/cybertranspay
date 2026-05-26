@@ -22,8 +22,8 @@ for /f "delims=" %%U in ('gcloud run services describe routing-engine --region=%
 echo Cloud Run URL: %URL%
 echo.
 echo Test locally (keep proxy window open):
-echo   gcloud run services proxy routing-engine --region=%REGION% --project=%PROJECT_ID% --port=8080
-echo   curl http://127.0.0.1:8080/health
+echo   gcloud run services proxy routing-engine --region=%REGION% --project=%PROJECT_ID% --port=8081
+echo   curl http://127.0.0.1:8081/health
 goto :eof
 
 :error
