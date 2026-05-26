@@ -259,78 +259,81 @@ class _GlobeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 1,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          AnimatedOpacity(
-            opacity: status == GlobeTransferStatus.completed ? 1 : 0,
-            duration: const Duration(milliseconds: 450),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.greenAccent.withOpacity(0.55),
-                    blurRadius: 64,
-                    spreadRadius: 18,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final globeSize = math.min(constraints.maxWidth, 420.0);
+        return Center(
+          child: SizedBox.square(
+            dimension: globeSize,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                AnimatedOpacity(
+                  opacity: status == GlobeTransferStatus.completed ? 1 : 0,
+                  duration: const Duration(milliseconds: 450),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.greenAccent.withOpacity(0.55),
+                          blurRadius: 64,
+                          spreadRadius: 18,
+                        ),
+                        BoxShadow(
+                          color: Colors.cyanAccent.withOpacity(0.35),
+                          blurRadius: 92,
+                          spreadRadius: 30,
+                        ),
+                      ],
+                    ),
+                    child: const SizedBox.expand(),
                   ),
-                  BoxShadow(
-                    color: Colors.cyanAccent.withOpacity(0.35),
-                    blurRadius: 92,
-                    spreadRadius: 30,
+                ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        Colors.indigo.shade300,
+                        Colors.blueGrey.shade900,
+                      ],
+                      center: const Alignment(-0.35, -0.45),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.22),
+                        blurRadius: 28,
+                        offset: const Offset(0, 14),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: const SizedBox.expand(),
-            ),
-          ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  Colors.indigo.shade300,
-                  Colors.blueGrey.shade900,
-                ],
-                center: const Alignment(-0.35, -0.45),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.22),
-                  blurRadius: 28,
-                  offset: const Offset(0, 14),
+                  child: CustomPaint(
+                    painter: _GlobeRoutePainter(
+                      from: draft.from,
+                      to: draft.to,
+                      progress: progress,
+                    ),
+                    child: Stack(
+                      children: countries
+                          .map(
+                            (country) => _CountryMarker(
+                              country: country,
+                              size: globeSize,
+                              selected: country.iso2 == draft.from.iso2 ||
+                                  country.iso2 == draft.to.iso2,
+                              onTap: () => onCountryTap(country),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
                 ),
               ],
             ),
-            child: CustomPaint(
-              painter: _GlobeRoutePainter(
-                from: draft.from,
-                to: draft.to,
-                progress: progress,
-              ),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return Stack(
-                    children: countries
-                        .map(
-                          (country) => _CountryMarker(
-                            country: country,
-                            size: constraints.biggest.shortestSide,
-                            selected: country.iso2 == draft.from.iso2 ||
-                                country.iso2 == draft.to.iso2,
-                            onTap: () => onCountryTap(country),
-                          ),
-                        )
-                        .toList(),
-                  );
-                },
-              ),
-            ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
