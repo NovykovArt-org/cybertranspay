@@ -64,10 +64,18 @@ class FakeApiClient extends ApiClient {
 
 void main() {
   testWidgets('shows globe transfer home screen', (tester) async {
-    await tester.pumpWidget(CyberTransPayApp(api: ApiClient()));
+    await tester.pumpWidget(CyberTransPayApp(api: FakeApiClient()));
+    await tester.pumpAndSettle();
+
     expect(find.text('Глобус переводов'), findsOneWidget);
     expect(find.text('FromDialog'), findsOneWidget);
     expect(find.text('ToDialog'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Линия перевода'),
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Линия перевода'), findsOneWidget);
   });
 
@@ -75,6 +83,11 @@ void main() {
     await tester.pumpWidget(CyberTransPayApp(api: FakeApiClient()));
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(
+      find.text('Получить котировку'),
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.tap(find.text('Получить котировку'));
     await tester.pumpAndSettle();
 
