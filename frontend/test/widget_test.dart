@@ -1,7 +1,7 @@
 import 'package:cybertranspay/main.dart';
 import 'package:cybertranspay/models/route_quote.dart';
 import 'package:cybertranspay/services/api_client.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class FakeApiClient extends ApiClient {
@@ -66,10 +66,9 @@ void main() {
     expect(find.text('USDT via Tron'), findsOneWidget);
     expect(find.textContaining('Quote: quote-1'), findsOneWidget);
 
-    final executeButton =
-        find.widgetWithText(FilledButton, 'Выполнить перевод');
-    await tester.ensureVisible(executeButton);
-    await tester.tap(executeButton);
+    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Выполнить перевод'));
     await tester.pumpAndSettle();
 
     expect(find.text('Перевод создан'), findsOneWidget);
