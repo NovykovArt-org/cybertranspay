@@ -140,24 +140,29 @@ class _QuoteScreenState extends State<QuoteScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Маршрутизация'),
-        actions: [
-          Icon(
-            _apiHealthy == true
-                ? Icons.cloud_done
-                : _apiHealthy == false
-                    ? Icons.cloud_off
-                    : Icons.cloud_queue,
-            color: _apiHealthy == true ? Colors.green : Colors.orange,
-          ),
-          const SizedBox(width: 16),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+    return SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
         children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Маршрутизация',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+              ),
+              Icon(
+                _apiHealthy == true
+                    ? Icons.cloud_done
+                    : _apiHealthy == false
+                        ? Icons.cloud_off
+                        : Icons.cloud_queue,
+                color: _apiHealthy == true ? Colors.green : Colors.orange,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           TextField(
             controller: _fromController,
             decoration: const InputDecoration(labelText: 'От (актив)'),
