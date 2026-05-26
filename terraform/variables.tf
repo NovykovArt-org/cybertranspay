@@ -9,7 +9,6 @@ variable "region" {
 }
 
 variable "github_app_installation_id" {
-<<<<<<< HEAD
   description = "GitHub App Installation ID for Developer Connect"
   type        = number
   default     = 0
@@ -44,8 +43,4 @@ variable "create_auth_secret" {
   description = "Create Secret Manager secret for AUTH_API_KEYS"
   type        = bool
   default     = true
-=======
-  type      = string
-  sensitive = true
->>>>>>> origin/main
 }

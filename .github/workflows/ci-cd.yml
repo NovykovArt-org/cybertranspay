@@ -29,6 +29,11 @@ jobs:
         with:
           flutter-version: '3.24.x'
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.9.0'
+
       - name: Check Flutter
         run: |
           if [ -d "frontend" ]; then
