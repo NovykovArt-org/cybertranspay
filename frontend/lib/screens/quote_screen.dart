@@ -178,53 +178,67 @@ class _QuoteScreenState extends State<QuoteScreen> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: ListView(
+      child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-        children: [
-          _QuoteHeader(apiHealthy: _apiHealthy),
-          const SizedBox(height: 16),
-          _QuoteForm(
-            fromController: _fromController,
-            toController: _toController,
-            amountController: _amountController,
-            preference: _preference,
-            loading: _loading,
-            error: _error,
-            onPreferenceChanged: (value) => setState(() => _preference = value),
-            onSubmit: _fetchQuote,
-          ),
-          const SizedBox(height: 20),
-          if (_routes.isEmpty && !_loading && _error == null)
-            const Text('Выберите пару активов и запросите котировку маршрута.'),
-          if (_lastQuote != null) _QuoteSummary(_lastQuote!),
-          if (_transferError != null) ...[
-            Text(
-              _transferError!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+        child: Column(
+          children: [
+            _QuoteHeader(apiHealthy: _apiHealthy),
+            const SizedBox(height: 16),
+            _QuoteForm(
+              fromController: _fromController,
+              toController: _toController,
+              amountController: _amountController,
+              preference: _preference,
+              loading: _loading,
+              error: _error,
+              onPreferenceChanged: (value) =>
+                  setState(() => _preference = value),
+              onSubmit: _fetchQuote,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 20),
+            Expanded(
+              child: ListView(
+                children: [
+                  if (_routes.isEmpty && !_loading && _error == null)
+                    const Text(
+                      'Выберите пару активов и запросите котировку маршрута.',
+                    ),
+                  if (_lastQuote != null) _QuoteSummary(_lastQuote!),
+                  if (_transferError != null) ...[
+                    Text(
+                      _transferError!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (_lastTransfer != null) ...[
+                    _TransferReceipt(
+                      _lastTransfer!,
+                      refreshing: _refreshingTransfer,
+                      statusMessage: _transferStatusMessage,
+                      onRefresh:
+                          _refreshingTransfer ? null : _refreshTransferStatus,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  ..._routes.map(
+                    (route) => _RouteCard(
+                      route,
+                      executing: _executingRouteId == route.routeId,
+                      transferCreated: _lastTransfer != null,
+                      onCreateTransfer:
+                          _executingRouteId == null && _lastTransfer == null
+                              ? () => _createTransfer(route)
+                              : null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
-          if (_lastTransfer != null) ...[
-            _TransferReceipt(
-              _lastTransfer!,
-              refreshing: _refreshingTransfer,
-              statusMessage: _transferStatusMessage,
-              onRefresh: _refreshingTransfer ? null : _refreshTransferStatus,
-            ),
-            const SizedBox(height: 12),
-          ],
-          ..._routes.map(
-            (route) => _RouteCard(
-              route,
-              executing: _executingRouteId == route.routeId,
-              transferCreated: _lastTransfer != null,
-              onCreateTransfer:
-                  _executingRouteId == null && _lastTransfer == null
-                      ? () => _createTransfer(route)
-                      : null,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
