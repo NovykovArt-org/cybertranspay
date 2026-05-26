@@ -102,7 +102,7 @@ async fn create_transfer_from_quote() {
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(json["quote_id"], quote_id);
     assert_eq!(json["route_id"], route_id);
-    assert_eq!(json["status"], "completed");
+    assert_eq!(json["status"], "pending");
     assert!(json["transfer_id"].as_str().unwrap().len() > 0);
 
     let transfer_id = json["transfer_id"].as_str().unwrap();
@@ -117,6 +117,51 @@ async fn create_transfer_from_quote() {
         .unwrap();
 
     assert_eq!(response.status(), axum::http::StatusCode::OK);
+}
+
+#[tokio::test]
+async fn transfer_status_advances_through_mock_lifecycle() {
+    let state = AppState {
+        rates: routing_engine::rates::LiveRates::mock(0.92),
+        auth: routing_engine::auth::AuthConfig::disabled(),
+        quotes: routing_engine::quotes::QuoteStore::with_ttl(chrono::Duration::minutes(5)),
+        transfers: routing_engine::transfers::TransferStore::with_lifecycle(
+            None,
+            chrono::Duration::milliseconds(10),
+            chrono::Duration::milliseconds(25),
+        ),
+    };
+    let app = app(state);
+    let quote = create_quote(&app).await;
+    let quote_id = quote["quote_id"].as_str().unwrap();
+    let route_id = quote["routes"][0]["route_id"].as_str().unwrap();
+
+    let body = format!(r#"{{"quote_id":"{quote_id}","route_id":"{route_id}"}}"#);
+    let response = app
+        .clone()
+        .oneshot(
+            axum::http::Request::builder()
+                .method("POST")
+                .uri("/v1/transfers")
+                .header("content-type", "application/json")
+                .body(axum::body::Body::from(body))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    let bytes = response.into_body().collect().await.unwrap().to_bytes();
+    let transfer: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    let transfer_id = transfer["transfer_id"].as_str().unwrap();
+    assert_eq!(transfer["status"], "pending");
+
+    tokio::time::sleep(std::time::Duration::from_millis(12)).await;
+    let transfer = get_transfer_json(&app, transfer_id).await;
+    assert_eq!(transfer["status"], "processing");
+
+    tokio::time::sleep(std::time::Duration::from_millis(18)).await;
+    let transfer = get_transfer_json(&app, transfer_id).await;
+    assert_eq!(transfer["status"], "completed");
 }
 
 #[tokio::test]
@@ -255,4 +300,21 @@ fn temp_store_dir() -> PathBuf {
     let dir = std::env::temp_dir().join(unique);
     std::fs::create_dir_all(&dir).unwrap();
     dir
+}
+
+async fn get_transfer_json(app: &Router, transfer_id: &str) -> serde_json::Value {
+    let response = app
+        .clone()
+        .oneshot(
+            axum::http::Request::builder()
+                .uri(format!("/v1/transfers/{transfer_id}"))
+                .body(axum::body::Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    let bytes = response.into_body().collect().await.unwrap().to_bytes();
+    serde_json::from_slice(&bytes).unwrap()
 }

@@ -1,5 +1,5 @@
 use crate::domain::{QuoteResponse, TransferResponse, TransferStatus};
-use chrono::Utc;
+use chrono::{Duration, Utc};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -11,6 +11,8 @@ use uuid::Uuid;
 pub struct TransferStore {
     inner: Arc<RwLock<HashMap<String, TransferResponse>>>,
     path: Option<Arc<PathBuf>>,
+    processing_after: Duration,
+    completion_after: Duration,
 }
 
 impl TransferStore {
@@ -19,10 +21,26 @@ impl TransferStore {
     }
 
     pub fn from_env() -> Self {
-        Self::with_path(persistence_path("TRANSFER_STORE_PATH", "transfers.json"))
+        Self::with_lifecycle(
+            persistence_path("TRANSFER_STORE_PATH", "transfers.json"),
+            duration_from_env("TRANSFER_PROCESSING_DELAY_MS", 750),
+            duration_from_env("TRANSFER_COMPLETION_DELAY_MS", 1_500),
+        )
     }
 
     pub fn with_path(path: Option<PathBuf>) -> Self {
+        Self::with_lifecycle(
+            path,
+            Duration::milliseconds(750),
+            Duration::milliseconds(1_500),
+        )
+    }
+
+    pub fn with_lifecycle(
+        path: Option<PathBuf>,
+        processing_after: Duration,
+        completion_after: Duration,
+    ) -> Self {
         let transfers = path
             .as_deref()
             .map(load_transfers)
@@ -30,6 +48,8 @@ impl TransferStore {
         Self {
             inner: Arc::new(RwLock::new(transfers)),
             path: path.map(Arc::new),
+            processing_after,
+            completion_after,
         }
     }
 
@@ -52,7 +72,7 @@ impl TransferStore {
             to_asset: quote.request.to_asset.to_uppercase(),
             amount: quote.request.amount,
             estimated_receive: route.estimated_receive,
-            status: TransferStatus::Completed,
+            status: TransferStatus::Pending,
             created_at: Utc::now(),
         };
 
@@ -66,7 +86,21 @@ impl TransferStore {
     }
 
     pub async fn get(&self, transfer_id: &str) -> Option<TransferResponse> {
-        self.inner.read().await.get(transfer_id).cloned()
+        let (transfer, snapshot) = {
+            let mut guard = self.inner.write().await;
+            let transfer = guard.get_mut(transfer_id)?;
+            let next_status = self.status_for(transfer);
+            if next_status != transfer.status {
+                transfer.status = next_status;
+                (transfer.clone(), Some(guard.clone()))
+            } else {
+                (transfer.clone(), None)
+            }
+        };
+        if let Some(snapshot) = snapshot {
+            self.persist(&snapshot);
+        }
+        Some(transfer)
     }
 
     fn persist(&self, transfers: &HashMap<String, TransferResponse>) {
@@ -75,6 +109,24 @@ impl TransferStore {
         };
         if let Err(err) = write_json(path, transfers) {
             tracing::warn!(path = %path.display(), error = %err, "failed to persist transfers");
+        }
+    }
+
+    fn status_for(&self, transfer: &TransferResponse) -> TransferStatus {
+        if matches!(
+            transfer.status,
+            TransferStatus::Completed | TransferStatus::Failed
+        ) {
+            return transfer.status;
+        }
+
+        let elapsed = Utc::now() - transfer.created_at;
+        if elapsed >= self.completion_after {
+            TransferStatus::Completed
+        } else if elapsed >= self.processing_after {
+            TransferStatus::Processing
+        } else {
+            TransferStatus::Pending
         }
     }
 }
@@ -107,6 +159,15 @@ fn persistence_path(var_name: &str, file_name: &str) -> Option<PathBuf> {
     std::env::var("CTP_DATA_DIR")
         .ok()
         .map(|dir| PathBuf::from(dir).join(file_name))
+}
+
+fn duration_from_env(var_name: &str, default_ms: i64) -> Duration {
+    let millis = std::env::var(var_name)
+        .ok()
+        .and_then(|value| value.parse::<i64>().ok())
+        .unwrap_or(default_ms)
+        .max(0);
+    Duration::milliseconds(millis)
 }
 
 fn load_transfers(path: &Path) -> HashMap<String, TransferResponse> {

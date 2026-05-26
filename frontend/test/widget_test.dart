@@ -7,6 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 class FakeApiClient extends ApiClient {
   FakeApiClient() : super(baseUrl: 'http://test');
 
+  int _refreshCount = 0;
+
   @override
   Future<bool> checkHealth() async => true;
 
@@ -43,23 +45,25 @@ class FakeApiClient extends ApiClient {
         toAsset: 'EUR',
         amount: 1000,
         estimatedReceive: 918.62,
-        status: 'completed',
+        status: 'pending',
         createdAt: DateTime.utc(2026, 5, 26, 8, 31),
       );
 
   @override
-  Future<TransferResponse> getTransfer(String transferId) async =>
-      TransferResponse(
-        transferId: transferId,
-        quoteId: 'quote-1',
-        routeId: 'stablecoin-tron',
-        fromAsset: 'USDT',
-        toAsset: 'EUR',
-        amount: 1000,
-        estimatedReceive: 918.62,
-        status: 'completed',
-        createdAt: DateTime.utc(2026, 5, 26, 8, 31),
-      );
+  Future<TransferResponse> getTransfer(String transferId) async {
+    _refreshCount += 1;
+    return TransferResponse(
+      transferId: transferId,
+      quoteId: 'quote-1',
+      routeId: 'stablecoin-tron',
+      fromAsset: 'USDT',
+      toAsset: 'EUR',
+      amount: 1000,
+      estimatedReceive: 918.62,
+      status: _refreshCount == 1 ? 'processing' : 'completed',
+      createdAt: DateTime.utc(2026, 5, 26, 8, 31),
+    );
+  }
 }
 
 void main() {
@@ -87,12 +91,17 @@ void main() {
 
     expect(find.text('Перевод создан'), findsOneWidget);
     expect(find.text('ID: transfer-1'), findsOneWidget);
-    expect(find.text('Статус: completed'), findsOneWidget);
+    expect(find.text('Статус: pending'), findsOneWidget);
 
     await tester.tap(find.text('Обновить статус'));
     await tester.pumpAndSettle();
 
     expect(find.text('Статус обновлён'), findsOneWidget);
+    expect(find.text('Статус: processing'), findsOneWidget);
+
+    await tester.tap(find.text('Обновить статус'));
+    await tester.pumpAndSettle();
+
     expect(find.text('Статус: completed'), findsOneWidget);
   });
 }

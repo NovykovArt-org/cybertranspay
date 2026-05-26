@@ -62,6 +62,23 @@ cargo run -p routing-engine
 For Cloud Run, use a mounted writable volume for these paths; the container
 filesystem alone is ephemeral.
 
+## Mock transfer lifecycle
+
+Transfers are still mock payments, but their status now advances as the client
+polls `GET /v1/transfers/{transfer_id}`:
+
+```text
+pending -> processing -> completed
+```
+
+Defaults are tuned for demos:
+
+- `TRANSFER_PROCESSING_DELAY_MS=750`
+- `TRANSFER_COMPLETION_DELAY_MS=1500`
+
+`failed` is part of the API enum for future provider failures, but the mock
+processor does not emit it yet.
+
 ## Assets and spot rate
 
 ```bash
