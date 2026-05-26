@@ -41,7 +41,7 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     final pages = [
       const _WelcomeTab(apiBaseUrl: AppConfig.apiBaseUrl),
-      const QuoteScreen(api: widget.api),
+      QuoteScreen(api: widget.api),
     ];
 
     return Scaffold(
@@ -81,7 +81,8 @@ class _WelcomeTab extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            Text('API: $apiBaseUrl', style: Theme.of(context).textTheme.bodySmall),
+            Text('API: $apiBaseUrl',
+                style: Theme.of(context).textTheme.bodySmall),
             if (!AppConfig.hasApiKey)
               Text(
                 'API_KEY не задан — нужен, если AUTH_REQUIRED=true',
