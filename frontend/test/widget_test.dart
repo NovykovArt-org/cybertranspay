@@ -46,6 +46,20 @@ class FakeApiClient extends ApiClient {
         status: 'completed',
         createdAt: DateTime.utc(2026, 5, 26, 8, 31),
       );
+
+  @override
+  Future<TransferResponse> getTransfer(String transferId) async =>
+      TransferResponse(
+        transferId: transferId,
+        quoteId: 'quote-1',
+        routeId: 'stablecoin-tron',
+        fromAsset: 'USDT',
+        toAsset: 'EUR',
+        amount: 1000,
+        estimatedReceive: 918.62,
+        status: 'completed',
+        createdAt: DateTime.utc(2026, 5, 26, 8, 31),
+      );
 }
 
 void main() {
@@ -73,6 +87,12 @@ void main() {
 
     expect(find.text('Перевод создан'), findsOneWidget);
     expect(find.text('ID: transfer-1'), findsOneWidget);
+    expect(find.text('Статус: completed'), findsOneWidget);
+
+    await tester.tap(find.text('Обновить статус'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Статус обновлён'), findsOneWidget);
     expect(find.text('Статус: completed'), findsOneWidget);
   });
 }

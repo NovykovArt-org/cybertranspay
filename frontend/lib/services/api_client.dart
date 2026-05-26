@@ -100,4 +100,30 @@ class ApiClient {
       jsonDecode(response.body) as Map<String, dynamic>,
     );
   }
+
+  Future<TransferResponse> getTransfer(String transferId) async {
+    final encodedId = Uri.encodeComponent(transferId);
+    final uri = Uri.parse('$_baseUrl/v1/transfers/$encodedId');
+    final response = await _client
+        .get(uri, headers: _headers)
+        .timeout(const Duration(seconds: 20));
+
+    if (response.statusCode == 401) {
+      throw ApiException(
+        'Требуется API-ключ (передайте --dart-define=API_KEY=...)',
+        statusCode: 401,
+      );
+    }
+
+    if (response.statusCode != 200) {
+      throw ApiException(
+        'Transfer lookup failed (${response.statusCode})',
+        statusCode: response.statusCode,
+      );
+    }
+
+    return TransferResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
 }

@@ -89,4 +89,37 @@ void main() {
     expect(transfer.status, 'completed');
     expect(transfer.estimatedReceive, 918.62);
   });
+
+  test('getTransfer parses response', () async {
+    final client = ApiClient(
+      baseUrl: 'http://test',
+      client: MockClient((request) async {
+        expect(request.method, 'GET');
+        expect(request.url.path, '/v1/transfers/transfer-1');
+        return http.Response(
+          '''
+{
+  "transfer_id": "transfer-1",
+  "quote_id": "quote-1",
+  "route_id": "stablecoin-tron",
+  "from_asset": "USDT",
+  "to_asset": "EUR",
+  "amount": 1000,
+  "estimated_receive": 918.62,
+  "status": "completed",
+  "created_at": "2026-05-26T08:31:00Z"
+}
+''',
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }),
+    );
+
+    final transfer = await client.getTransfer('transfer-1');
+
+    expect(transfer.transferId, 'transfer-1');
+    expect(transfer.routeId, 'stablecoin-tron');
+    expect(transfer.status, 'completed');
+  });
 }

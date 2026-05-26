@@ -18,8 +18,10 @@ class _QuoteScreenState extends State<QuoteScreen> {
   String _preference = 'cheapest';
   bool _loading = false;
   String? _executingRouteId;
+  bool _refreshingTransfer = false;
   String? _error;
   String? _transferError;
+  String? _transferStatusMessage;
   List<RouteQuote> _routes = [];
   QuoteResponse? _lastQuote;
   TransferResponse? _lastTransfer;
@@ -51,6 +53,7 @@ class _QuoteScreenState extends State<QuoteScreen> {
       _loading = true;
       _error = null;
       _transferError = null;
+      _transferStatusMessage = null;
       _lastTransfer = null;
     });
 
@@ -100,6 +103,7 @@ class _QuoteScreenState extends State<QuoteScreen> {
     setState(() {
       _executingRouteId = route.routeId;
       _transferError = null;
+      _transferStatusMessage = null;
       _lastTransfer = null;
     });
 
@@ -114,6 +118,7 @@ class _QuoteScreenState extends State<QuoteScreen> {
       setState(() {
         _lastTransfer = transfer;
         _executingRouteId = null;
+        _transferStatusMessage = 'Перевод создан';
       });
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -126,6 +131,39 @@ class _QuoteScreenState extends State<QuoteScreen> {
       setState(() {
         _transferError = 'Не удалось выполнить перевод: $e';
         _executingRouteId = null;
+      });
+    }
+  }
+
+  Future<void> _refreshTransferStatus() async {
+    final transfer = _lastTransfer;
+    if (transfer == null) return;
+
+    setState(() {
+      _refreshingTransfer = true;
+      _transferError = null;
+      _transferStatusMessage = null;
+    });
+
+    try {
+      final refreshed = await widget.api.getTransfer(transfer.transferId);
+      if (!mounted) return;
+      setState(() {
+        _lastTransfer = refreshed;
+        _refreshingTransfer = false;
+        _transferStatusMessage = 'Статус обновлён';
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _transferError = e.message;
+        _refreshingTransfer = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _transferError = 'Не удалось обновить статус: $e';
+        _refreshingTransfer = false;
       });
     }
   }
@@ -233,7 +271,12 @@ class _QuoteScreenState extends State<QuoteScreen> {
             const SizedBox(height: 8),
           ],
           if (_lastTransfer != null) ...[
-            _TransferReceipt(_lastTransfer!),
+            _TransferReceipt(
+              _lastTransfer!,
+              refreshing: _refreshingTransfer,
+              statusMessage: _transferStatusMessage,
+              onRefresh: _refreshingTransfer ? null : _refreshTransferStatus,
+            ),
             const SizedBox(height: 12),
           ],
           ..._routes.map(
@@ -302,9 +345,17 @@ class _RouteCard extends StatelessWidget {
 }
 
 class _TransferReceipt extends StatelessWidget {
-  const _TransferReceipt(this.transfer);
+  const _TransferReceipt(
+    this.transfer, {
+    required this.refreshing,
+    required this.statusMessage,
+    required this.onRefresh,
+  });
 
   final TransferResponse transfer;
+  final bool refreshing;
+  final String? statusMessage;
+  final VoidCallback? onRefresh;
 
   @override
   Widget build(BuildContext context) {
@@ -326,6 +377,22 @@ class _TransferReceipt extends StatelessWidget {
               '${transfer.fromAsset} → ${transfer.estimatedReceive.toStringAsFixed(2)} '
               '${transfer.toAsset}',
             ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: onRefresh,
+              icon: refreshing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh),
+              label: Text(refreshing ? 'Обновляем...' : 'Обновить статус'),
+            ),
+            if (statusMessage != null) ...[
+              const SizedBox(height: 6),
+              Text(statusMessage!),
+            ],
           ],
         ),
       ),
