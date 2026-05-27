@@ -1,16 +1,20 @@
 import 'package:cybertranspay/config.dart';
+import 'package:cybertranspay/screens/account_screen.dart';
 import 'package:cybertranspay/screens/quote_screen.dart';
 import 'package:cybertranspay/services/api_client.dart';
+import 'package:cybertranspay/services/auth_client.dart';
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(CyberTransPayApp(api: ApiClient()));
+  runApp(CyberTransPayApp(api: ApiClient(), auth: AuthClient()));
 }
 
 class CyberTransPayApp extends StatelessWidget {
-  const CyberTransPayApp({super.key, required this.api});
+  CyberTransPayApp({super.key, required this.api, AuthClient? auth})
+      : auth = auth ?? AuthClient();
 
   final ApiClient api;
+  final AuthClient auth;
 
   @override
   Widget build(BuildContext context) {
@@ -40,15 +44,16 @@ class CyberTransPayApp extends StatelessWidget {
           ),
         ),
       ),
-      home: HomeShell(api: api),
+      home: HomeShell(api: api, auth: auth),
     );
   }
 }
 
 class HomeShell extends StatefulWidget {
-  const HomeShell({super.key, required this.api});
+  const HomeShell({super.key, required this.api, required this.auth});
 
   final ApiClient api;
+  final AuthClient auth;
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -62,6 +67,7 @@ class _HomeShellState extends State<HomeShell> {
     final pages = [
       const _WelcomeTab(apiBaseUrl: AppConfig.apiBaseUrl),
       QuoteScreen(api: widget.api),
+      AccountScreen(auth: widget.auth),
     ];
 
     return Scaffold(
@@ -72,6 +78,7 @@ class _HomeShellState extends State<HomeShell> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home), label: 'Главная'),
           NavigationDestination(icon: Icon(Icons.route), label: 'Маршруты'),
+          NavigationDestination(icon: Icon(Icons.person), label: 'Кабинет'),
         ],
       ),
     );

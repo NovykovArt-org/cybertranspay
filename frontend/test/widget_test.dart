@@ -1,6 +1,7 @@
 import 'package:cybertranspay/main.dart';
 import 'package:cybertranspay/models/route_quote.dart';
 import 'package:cybertranspay/services/api_client.dart';
+import 'package:cybertranspay/services/auth_client.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -67,6 +68,30 @@ class FakeApiClient extends ApiClient {
       );
 }
 
+class FakeAuthClient extends AuthClient {
+  FakeAuthClient() : super(firebaseWebApiKey: 'test-key');
+
+  @override
+  bool get isConfigured => true;
+
+  @override
+  Future<AuthSession> signIn({
+    required String email,
+    required String password,
+  }) async =>
+      AuthSession(
+        email: email,
+        localId: 'firebase-user-1',
+        idToken: 'id-token',
+        refreshToken: 'refresh-token',
+        expiresIn: 3600,
+        emailVerified: false,
+      );
+
+  @override
+  Future<void> sendEmailVerification(String idToken) async {}
+}
+
 void main() {
   testWidgets('shows app title', (tester) async {
     await tester.pumpWidget(CyberTransPayApp(api: ApiClient()));
@@ -128,5 +153,33 @@ void main() {
 
     expect(find.text('Статус обновлён'), findsOneWidget);
     expect(find.text('Статус: completed'), findsOneWidget);
+  });
+
+  testWidgets('signs in and shows account security profile', (tester) async {
+    await tester.pumpWidget(
+      CyberTransPayApp(api: FakeApiClient(), auth: FakeAuthClient()),
+    );
+
+    await tester.tap(find.text('Кабинет'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Личный кабинет'), findsOneWidget);
+    expect(find.text('Войти через Firebase'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('account-email-field')),
+      'client@example.com',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('account-password-field')),
+      'secret123',
+    );
+    await tester.tap(find.text('Войти через Firebase'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('client@example.com'), findsOneWidget);
+    expect(find.text('UID: firebase-user-1'), findsOneWidget);
+    expect(find.textContaining('User session: активна'), findsOneWidget);
+    expect(find.text('Подтвердить email'), findsOneWidget);
   });
 }
