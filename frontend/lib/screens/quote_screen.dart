@@ -90,6 +90,7 @@ class QuoteScreen extends StatefulWidget {
 
 class _QuoteScreenState extends State<QuoteScreen> {
   final _amountController = TextEditingController(text: '1000');
+  final _recipientController = TextEditingController();
   String? _fromCountryCode;
   String? _toCountryCode;
   String _preference = 'cheapest';
@@ -102,6 +103,8 @@ class _QuoteScreenState extends State<QuoteScreen> {
   List<RouteQuote> _routes = [];
   QuoteResponse? _lastQuote;
   TransferResponse? _lastTransfer;
+  RouteQuote? _selectedRoute;
+  String? _confirmedRecipient;
   bool? _apiHealthy;
 
   @override
@@ -137,6 +140,8 @@ class _QuoteScreenState extends State<QuoteScreen> {
     _routes = [];
     _lastQuote = null;
     _lastTransfer = null;
+    _selectedRoute = null;
+    _confirmedRecipient = null;
   }
 
   void _setFromCountry(String? code) {
@@ -191,6 +196,8 @@ class _QuoteScreenState extends State<QuoteScreen> {
       _transferError = null;
       _transferStatusMessage = null;
       _lastTransfer = null;
+      _selectedRoute = null;
+      _confirmedRecipient = null;
     });
 
     try {
@@ -229,10 +236,31 @@ class _QuoteScreenState extends State<QuoteScreen> {
     }
   }
 
-  Future<void> _createTransfer(RouteQuote route) async {
+  void _selectRoute(RouteQuote route) {
+    setState(() {
+      _selectedRoute = route;
+      _transferError = null;
+      _transferStatusMessage = null;
+      _lastTransfer = null;
+      _confirmedRecipient = null;
+    });
+  }
+
+  Future<void> _createTransfer() async {
     final quote = _lastQuote;
+    final route = _selectedRoute;
     if (quote == null) {
       setState(() => _transferError = 'Сначала получите котировку маршрута');
+      return;
+    }
+    if (route == null) {
+      setState(() => _transferError = 'Выберите маршрут для перевода');
+      return;
+    }
+
+    final recipient = _recipientController.text.trim();
+    if (recipient.isEmpty) {
+      setState(() => _transferError = 'Укажите получателя');
       return;
     }
 
@@ -241,6 +269,7 @@ class _QuoteScreenState extends State<QuoteScreen> {
       _transferError = null;
       _transferStatusMessage = null;
       _lastTransfer = null;
+      _confirmedRecipient = recipient;
     });
 
     try {
@@ -254,6 +283,7 @@ class _QuoteScreenState extends State<QuoteScreen> {
       setState(() {
         _lastTransfer = transfer;
         _executingRouteId = null;
+        _selectedRoute = null;
       });
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -306,6 +336,7 @@ class _QuoteScreenState extends State<QuoteScreen> {
   @override
   void dispose() {
     _amountController.dispose();
+    _recipientController.dispose();
     super.dispose();
   }
 
@@ -429,9 +460,25 @@ class _QuoteScreenState extends State<QuoteScreen> {
               _StatusBanner(message: _transferError!, isError: true),
               const SizedBox(height: 8),
             ],
+            if (_selectedRoute != null && _lastTransfer == null) ...[
+              _TransferConfirmation(
+                route: _selectedRoute!,
+                amount: double.tryParse(_amountController.text.trim()) ?? 0,
+                fromCountry: fromCountry!,
+                toCountry: toCountry!,
+                recipientController: _recipientController,
+                confirming: _executingRouteId == _selectedRoute!.routeId,
+                onConfirm: _executingRouteId == null ? _createTransfer : null,
+                onCancel: _executingRouteId == null
+                    ? () => setState(() => _selectedRoute = null)
+                    : null,
+              ),
+              const SizedBox(height: 12),
+            ],
             if (_lastTransfer != null) ...[
               _TransferReceipt(
                 _lastTransfer!,
+                recipient: _confirmedRecipient,
                 refreshing: _refreshingTransfer,
                 statusMessage: _transferStatusMessage,
                 onRefresh: _refreshingTransfer ? null : _refreshTransferStatus,
@@ -441,9 +488,10 @@ class _QuoteScreenState extends State<QuoteScreen> {
             ..._routes.map(
               (route) => _RouteCard(
                 route,
+                selected: _selectedRoute?.routeId == route.routeId,
                 executing: _executingRouteId == route.routeId,
-                onCreateTransfer: _executingRouteId == null
-                    ? () => _createTransfer(route)
+                onSelect: _executingRouteId == null
+                    ? () => _selectRoute(route)
                     : null,
               ),
             ),
@@ -914,12 +962,14 @@ class _QuoteSummary extends StatelessWidget {
 class _RouteCard extends StatelessWidget {
   const _RouteCard(
     this.route, {
+    required this.selected,
     required this.executing,
-    required this.onCreateTransfer,
+    required this.onSelect,
   });
   final RouteQuote route;
+  final bool selected;
   final bool executing;
-  final VoidCallback? onCreateTransfer;
+  final VoidCallback? onSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -928,7 +978,19 @@ class _RouteCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.08),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white.withOpacity(0.12)),
+        border: Border.all(
+          color: selected
+              ? const Color(0xFF83F5FF)
+              : Colors.white.withOpacity(0.12),
+          width: selected ? 1.6 : 1,
+        ),
+        boxShadow: [
+          if (selected)
+            BoxShadow(
+              color: const Color(0xFF83F5FF).withOpacity(0.18),
+              blurRadius: 22,
+            ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -958,15 +1020,21 @@ class _RouteCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             FilledButton.icon(
-              onPressed: onCreateTransfer,
+              onPressed: onSelect,
               icon: executing
                   ? const SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.send),
-              label: Text(executing ? 'Выполняем...' : 'Выполнить перевод'),
+                  : Icon(selected ? Icons.check_circle : Icons.touch_app),
+              label: Text(
+                executing
+                    ? 'Выполняем...'
+                    : selected
+                        ? 'Маршрут выбран'
+                        : 'Выбрать маршрут',
+              ),
             ),
           ],
         ),
@@ -977,15 +1045,138 @@ class _RouteCard extends StatelessWidget {
   TextStyle get _mutedText => const TextStyle(color: Colors.white70);
 }
 
+class _TransferConfirmation extends StatelessWidget {
+  const _TransferConfirmation({
+    required this.route,
+    required this.amount,
+    required this.fromCountry,
+    required this.toCountry,
+    required this.recipientController,
+    required this.confirming,
+    required this.onConfirm,
+    required this.onCancel,
+  });
+
+  final RouteQuote route;
+  final double amount;
+  final _CorridorCountry fromCountry;
+  final _CorridorCountry toCountry;
+  final TextEditingController recipientController;
+  final bool confirming;
+  final VoidCallback? onConfirm;
+  final VoidCallback? onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final fee = amount * route.feePercent / 100;
+
+    return _GlassPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Подтверждение перевода',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            key: const ValueKey('recipient-field'),
+            controller: recipientController,
+            decoration: const InputDecoration(
+              labelText: 'Получатель',
+              hintText: 'Имя, IBAN или wallet',
+              prefixIcon: Icon(Icons.person_outline),
+            ),
+          ),
+          const SizedBox(height: 14),
+          _ConfirmRow('Направление',
+              '${fromCountry.flag} ${fromCountry.currency} → ${toCountry.flag} ${toCountry.currency}'),
+          _ConfirmRow('Маршрут', route.label),
+          _ConfirmRow(
+              'Сумма', '${amount.toStringAsFixed(2)} ${fromCountry.currency}'),
+          _ConfirmRow('Комиссия',
+              '${fee.toStringAsFixed(2)} ${fromCountry.currency} (${route.feePercent}%)'),
+          _ConfirmRow('К получению',
+              '${route.estimatedReceive.toStringAsFixed(2)} ${toCountry.currency}',
+              accent: true),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: onCancel,
+                  child: const Text('Отменить'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: onConfirm,
+                  icon: confirming
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.verified_outlined),
+                  label: Text(confirming ? 'Подтверждаем...' : 'Подтвердить'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ConfirmRow extends StatelessWidget {
+  const _ConfirmRow(this.label, this.value, {this.accent = false});
+
+  final String label;
+  final String value;
+  final bool accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 104,
+            child: Text(label, style: const TextStyle(color: Colors.white54)),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                color: accent ? const Color(0xFF83F5FF) : Colors.white,
+                fontWeight: accent ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _TransferReceipt extends StatelessWidget {
   const _TransferReceipt(
     this.transfer, {
+    required this.recipient,
     required this.refreshing,
     required this.statusMessage,
     required this.onRefresh,
   });
 
   final TransferResponse transfer;
+  final String? recipient;
   final bool refreshing;
   final String? statusMessage;
   final VoidCallback? onRefresh;
@@ -1020,6 +1211,8 @@ class _TransferReceipt extends StatelessWidget {
             Text('ID: ${transfer.transferId}', style: _mutedText),
             Text('Статус: ${transfer.status}', style: _mutedText),
             Text('Маршрут: ${transfer.routeId}', style: _mutedText),
+            if (recipient != null)
+              Text('Получатель: $recipient', style: _mutedText),
             Text(
               'Сумма: ${transfer.amount.toStringAsFixed(2)} '
               '${transfer.fromAsset} → ${transfer.estimatedReceive.toStringAsFixed(2)} '

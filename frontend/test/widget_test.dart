@@ -104,12 +104,24 @@ void main() {
     await tester.drag(find.byType(ListView), const Offset(0, -300));
     await tester.pumpAndSettle();
     expect(find.text('SEPA bank rail'), findsOneWidget);
-    await tester.tap(find.text('Выполнить перевод'));
+    await tester.tap(find.text('Выбрать маршрут'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Подтверждение перевода'), findsOneWidget);
+    expect(find.text('К получению'), findsOneWidget);
+    await tester.enterText(
+      find.byKey(const ValueKey('recipient-field')),
+      'Alex Receiver',
+    );
+    await tester.ensureVisible(find.text('Подтвердить'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Подтвердить'));
     await tester.pumpAndSettle();
 
     expect(find.text('Перевод создан'), findsOneWidget);
     expect(find.text('ID: transfer-1'), findsOneWidget);
     expect(find.text('Статус: completed'), findsOneWidget);
+    expect(find.text('Получатель: Alex Receiver'), findsOneWidget);
 
     await tester.tap(find.text('Обновить статус'));
     await tester.pumpAndSettle();
