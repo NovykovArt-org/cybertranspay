@@ -7,30 +7,35 @@ import 'package:flutter_test/flutter_test.dart';
 class FakeApiClient extends ApiClient {
   FakeApiClient() : super(baseUrl: 'http://test');
 
+  QuoteRequest? lastQuoteRequest;
+
   @override
   Future<bool> checkHealth() async => true;
 
   @override
-  Future<QuoteResponse> fetchQuote(QuoteRequest request) async => QuoteResponse(
-        quoteId: 'quote-1',
-        expiresAt: DateTime.utc(2026, 5, 26, 8, 30),
-        preference: request.preference,
-        spotRate: 0.92,
-        rateSource: 'mock',
-        livePricing: false,
-        routes: [
-          RouteQuote(
-            routeId: 'stablecoin-tron',
-            label: 'USDT via Tron',
-            rails: const ['crypto', 'fiat'],
-            feePercent: 0.15,
-            etaMinutes: 5,
-            complianceScore: 78,
-            spotRate: 0.92,
-            estimatedReceive: 918.62,
-          ),
-        ],
-      );
+  Future<QuoteResponse> fetchQuote(QuoteRequest request) async {
+    lastQuoteRequest = request;
+    return QuoteResponse(
+      quoteId: 'quote-1',
+      expiresAt: DateTime.utc(2026, 5, 26, 8, 30),
+      preference: request.preference,
+      spotRate: 0.92,
+      rateSource: 'mock',
+      livePricing: false,
+      routes: [
+        RouteQuote(
+          routeId: 'bank-sepa',
+          label: 'SEPA bank rail',
+          rails: const ['fiat', 'bank'],
+          feePercent: 0.35,
+          etaMinutes: 1440,
+          complianceScore: 95,
+          spotRate: 0.92,
+          estimatedReceive: 916.78,
+        ),
+      ],
+    );
+  }
 
   @override
   Future<TransferResponse> createTransfer(
@@ -69,15 +74,30 @@ void main() {
   });
 
   testWidgets('creates transfer from selected route', (tester) async {
-    await tester.pumpWidget(CyberTransPayApp(api: FakeApiClient()));
+    final api = FakeApiClient();
+    await tester.pumpWidget(CyberTransPayApp(api: api));
 
     await tester.tap(find.text('Маршруты'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Выберите страну'), findsNWidgets(2));
+
+    await tester.tap(find.byKey(const ValueKey('from-country-field')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('США').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('to-country-field')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('Еврозона').last);
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Подобрать маршрут'));
     await tester.pumpAndSettle();
 
-    expect(find.text('USDT via Tron'), findsOneWidget);
+    expect(api.lastQuoteRequest?.fromAsset, 'USD');
+    expect(api.lastQuoteRequest?.toAsset, 'EUR');
+    expect(find.text('SEPA bank rail'), findsOneWidget);
     expect(find.textContaining('Quote: quote-1'), findsOneWidget);
 
     await tester.drag(find.byType(ListView), const Offset(0, -300));
