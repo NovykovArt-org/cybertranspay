@@ -92,16 +92,18 @@ void main() {
     await tester.tap(find.textContaining('Еврозона').last);
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(find.text('Подобрать маршрут'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Подобрать маршрут'));
     await tester.pumpAndSettle();
 
     expect(api.lastQuoteRequest?.fromAsset, 'USD');
     expect(api.lastQuoteRequest?.toAsset, 'EUR');
-    expect(find.text('SEPA bank rail'), findsOneWidget);
     expect(find.textContaining('Quote: quote-1'), findsOneWidget);
 
     await tester.drag(find.byType(ListView), const Offset(0, -300));
     await tester.pumpAndSettle();
+    expect(find.text('SEPA bank rail'), findsOneWidget);
     await tester.tap(find.text('Выполнить перевод'));
     await tester.pumpAndSettle();
 
