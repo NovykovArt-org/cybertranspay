@@ -360,7 +360,7 @@ class _ProfilePanel extends StatelessWidget {
             session.emailVerified ? 'подтвержден' : 'не подтвержден',
             accent: session.emailVerified,
           ),
-          _InfoRow('Auth provider', 'Firebase Identity Toolkit'),
+          const _InfoRow('Auth provider', 'Firebase Identity Toolkit'),
           _InfoRow('ID token', session.idToken.isNotEmpty ? 'получен' : 'нет'),
           _InfoRow('Сессия', '${session.expiresIn ~/ 60} мин'),
           const SizedBox(height: 14),

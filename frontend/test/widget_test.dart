@@ -179,6 +179,8 @@ void main() {
 
     expect(find.text('client@example.com'), findsOneWidget);
     expect(find.text('UID: firebase-user-1'), findsOneWidget);
+    await tester.drag(find.byType(ListView), const Offset(0, -320));
+    await tester.pumpAndSettle();
     expect(find.textContaining('User session: активна'), findsOneWidget);
     expect(find.text('Подтвердить email'), findsOneWidget);
   });
