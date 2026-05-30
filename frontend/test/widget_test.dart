@@ -93,11 +93,11 @@ class FakeAuthClient extends AuthClient {
 }
 
 void main() {
-  testWidgets('shows globe transfer home screen', (tester) async {
+  testWidgets('shows flat transfer map home screen', (tester) async {
     await tester.pumpWidget(CyberTransPayApp(api: FakeApiClient()));
     await tester.pumpAndSettle();
 
-    expect(find.text('Глобус переводов'), findsOneWidget);
+    expect(find.text('Карта переводов'), findsOneWidget);
     expect(find.text('FromDialog'), findsOneWidget);
     expect(find.text('ToDialog'), findsOneWidget);
 
@@ -109,7 +109,7 @@ void main() {
     expect(find.text('Линия перевода'), findsOneWidget);
   });
 
-  testWidgets('creates transfer from globe flow', (tester) async {
+  testWidgets('creates transfer from flat map flow', (tester) async {
     await tester.pumpWidget(CyberTransPayApp(api: FakeApiClient()));
     await tester.pumpAndSettle();
 
