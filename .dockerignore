@@ -1,0 +1,19 @@
+# Ignore everything by default
+*
+
+# Allow only what's needed
+!Cargo.toml
+!Cargo.lock
+!backend/routing-engine/**
+!backend/routing-engine/Cargo.toml
+!backend/routing-engine/src/**
+
+# Ignore heavy/unneeded folders
+.git
+.github
+frontend
+docs
+terraform
+scripts
+target
+**/target
