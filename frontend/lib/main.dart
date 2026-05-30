@@ -1,4 +1,4 @@
-import 'package:cybertranspay/config.dart';
+import 'package:cybertranspay/screens/globe_transfer_screen.dart';
 import 'package:cybertranspay/screens/account_screen.dart';
 import 'package:cybertranspay/screens/quote_screen.dart';
 import 'package:cybertranspay/services/api_client.dart';
@@ -65,7 +65,7 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      const _WelcomeTab(apiBaseUrl: AppConfig.apiBaseUrl),
+      GlobeTransferScreen(api: widget.api),
       QuoteScreen(api: widget.api),
       AccountScreen(auth: widget.auth),
     ];
@@ -76,47 +76,10 @@ class _HomeShellState extends State<HomeShell> {
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.home), label: 'Главная'),
+          NavigationDestination(icon: Icon(Icons.public), label: 'Глобус'),
           NavigationDestination(icon: Icon(Icons.route), label: 'Маршруты'),
           NavigationDestination(icon: Icon(Icons.person), label: 'Кабинет'),
         ],
-      ),
-    );
-  }
-}
-
-class _WelcomeTab extends StatelessWidget {
-  const _WelcomeTab({required this.apiBaseUrl});
-
-  final String apiBaseUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'CyberTransPay',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Мгновенные трансграничные платежи\ncrypto ↔ fiat',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            Text('API: $apiBaseUrl',
-                style: Theme.of(context).textTheme.bodySmall),
-            if (!AppConfig.hasApiKey)
-              Text(
-                'API_KEY не задан — нужен, если AUTH_REQUIRED=true',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-          ],
-        ),
       ),
     );
   }
