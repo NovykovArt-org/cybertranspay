@@ -1,4 +1,5 @@
 import 'package:cybertranspay/config.dart';
+import 'package:cybertranspay/screens/globe_transfer_screen.dart';
 import 'package:cybertranspay/screens/quote_screen.dart';
 import 'package:cybertranspay/services/api_client.dart';
 import 'package:flutter/material.dart';
@@ -41,6 +42,7 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     final pages = [
       const _WelcomeTab(apiBaseUrl: AppConfig.apiBaseUrl),
+      const GlobeTransferScreen(),
       QuoteScreen(api: widget.api),
     ];
 
@@ -51,6 +53,7 @@ class _HomeShellState extends State<HomeShell> {
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home), label: 'Главная'),
+          NavigationDestination(icon: Icon(Icons.public), label: 'Глобус'),
           NavigationDestination(icon: Icon(Icons.route), label: 'Маршрут'),
         ],
       ),

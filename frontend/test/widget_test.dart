@@ -105,4 +105,33 @@ void main() {
 
     expect(find.text('Статус: completed'), findsOneWidget);
   });
+
+  testWidgets('shows globe transfer flow states', (tester) async {
+    await tester.pumpWidget(CyberTransPayApp(api: FakeApiClient()));
+
+    await tester.tap(find.text('Глобус'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Глобус переводов'), findsOneWidget);
+    expect(find.text('Откуда'), findsOneWidget);
+    expect(find.text('Куда'), findsOneWidget);
+    expect(find.textContaining('US · USD'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Запустить перевод'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.drag(find.byType(Scrollable).last, const Offset(0, -180));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Запустить перевод'));
+    await tester.pump();
+    expect(find.textContaining('Подготовка'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.textContaining('В пути'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 8));
+    expect(find.textContaining('Доставлено'), findsOneWidget);
+  });
 }
