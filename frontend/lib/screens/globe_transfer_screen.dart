@@ -488,8 +488,8 @@ class _FlatMapCard extends StatelessWidget {
           children: [
             Text(
               activeSide == _DraftSide.from
-                  ? 'Клик по стране на карте задаёт From'
-                  : 'Клик по стране на карте задаёт To',
+                  ? 'Выберите страну отправления на карте'
+                  : 'Выберите страну получения на карте',
               style: Theme.of(context).textTheme.labelLarge,
             ),
             const SizedBox(height: 8),
