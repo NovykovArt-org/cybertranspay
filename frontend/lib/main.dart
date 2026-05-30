@@ -65,7 +65,7 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      GlobeTransferScreen(api: widget.api),
+      FlatTransferMapScreen(api: widget.api),
       QuoteScreen(api: widget.api),
       AccountScreen(auth: widget.auth),
     ];
@@ -76,7 +76,7 @@ class _HomeShellState extends State<HomeShell> {
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.public), label: 'Глобус'),
+          NavigationDestination(icon: Icon(Icons.map), label: 'Карта'),
           NavigationDestination(icon: Icon(Icons.route), label: 'Маршруты'),
           NavigationDestination(icon: Icon(Icons.person), label: 'Кабинет'),
         ],

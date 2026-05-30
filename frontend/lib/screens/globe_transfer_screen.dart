@@ -7,16 +7,16 @@ import 'package:flutter/material.dart';
 
 enum _DraftSide { from, to }
 
-class GlobeTransferScreen extends StatefulWidget {
-  const GlobeTransferScreen({super.key, required this.api});
+class FlatTransferMapScreen extends StatefulWidget {
+  const FlatTransferMapScreen({super.key, required this.api});
 
   final ApiClient api;
 
   @override
-  State<GlobeTransferScreen> createState() => _GlobeTransferScreenState();
+  State<FlatTransferMapScreen> createState() => _FlatTransferMapScreenState();
 }
 
-class _GlobeTransferScreenState extends State<GlobeTransferScreen> {
+class _FlatTransferMapScreenState extends State<FlatTransferMapScreen> {
   TransferDraft _draft = TransferDraft(
     fromCountry: transferCountries.first,
     toCountry: transferCountries[1],
@@ -235,7 +235,7 @@ class _GlobeTransferScreenState extends State<GlobeTransferScreen> {
             children: [
               Expanded(
                 child: Text(
-                  'Глобус переводов',
+                  'Карта переводов',
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
               ),
@@ -263,7 +263,7 @@ class _GlobeTransferScreenState extends State<GlobeTransferScreen> {
             onEditTo: _openToDialog,
           ),
           const SizedBox(height: 16),
-          _GlobeCard(
+          _FlatMapCard(
             draft: _draft,
             activeSide: _activeSide,
             progress: _progress,
@@ -323,7 +323,7 @@ class _GlobeTransferScreenState extends State<GlobeTransferScreen> {
           if (_routes.isEmpty && !_loading && _error == null)
             const Text('Котировки маршрутов появятся здесь.'),
           ..._routes.map(
-            (route) => _GlobeRouteCard(
+            (route) => _MapRouteCard(
               route: route,
               executing: _executingRouteId == route.routeId,
               onCreateTransfer: _executingRouteId == null
@@ -464,8 +464,8 @@ class _CountryTile extends StatelessWidget {
   }
 }
 
-class _GlobeCard extends StatelessWidget {
-  const _GlobeCard({
+class _FlatMapCard extends StatelessWidget {
+  const _FlatMapCard({
     required this.draft,
     required this.activeSide,
     required this.progress,
@@ -488,8 +488,8 @@ class _GlobeCard extends StatelessWidget {
           children: [
             Text(
               activeSide == _DraftSide.from
-                  ? 'Клик по стране задаёт From'
-                  : 'Клик по стране задаёт To',
+                  ? 'Выберите страну отправления на карте'
+                  : 'Выберите страну получения на карте',
               style: Theme.of(context).textTheme.labelLarge,
             ),
             const SizedBox(height: 8),
@@ -502,7 +502,7 @@ class _GlobeCard extends StatelessWidget {
                     children: [
                       Positioned.fill(
                         child: CustomPaint(
-                          painter: _GlobePainter(
+                          painter: _FlatMapPainter(
                             draft: draft,
                             progress: progress,
                           ),
@@ -596,47 +596,50 @@ class _CountryMarker extends StatelessWidget {
   }
 }
 
-class _GlobePainter extends CustomPainter {
-  const _GlobePainter({required this.draft, required this.progress});
+class _FlatMapPainter extends CustomPainter {
+  const _FlatMapPainter({required this.draft, required this.progress});
 
   final TransferDraft draft;
   final TransferProgress progress;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) * 0.44;
-    final rect = Rect.fromCircle(center: center, radius: radius);
-    final globePaint = Paint()
-      ..shader = const RadialGradient(
-        center: Alignment(-0.35, -0.45),
-        colors: [Color(0xFF3C6DF0), Color(0xFF10245C)],
-      ).createShader(rect);
-    canvas.drawCircle(center, radius, globePaint);
+    final mapRect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      const Radius.circular(28),
+    );
+    canvas.drawRRect(
+      mapRect,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF123D7A), Color(0xFF091A44)],
+        ).createShader(Offset.zero & size),
+    );
 
     final gridPaint = Paint()
-      ..color = Colors.white.withOpacity(0.16)
+      ..color = Colors.white.withOpacity(0.12)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
-    for (final scale in [0.35, 0.65, 0.9]) {
-      canvas.drawOval(
-        Rect.fromCenter(
-          center: center,
-          width: radius * 2 * scale,
-          height: radius * 2,
-        ),
-        gridPaint,
-      );
+    for (var i = 1; i < 6; i++) {
+      final x = size.width * i / 6;
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
     }
-    for (final y in [-0.55, -0.25, 0.25, 0.55]) {
-      canvas.drawOval(
-        Rect.fromCenter(
-          center: Offset(center.dx, center.dy + radius * y),
-          width: radius * 1.8,
-          height: radius * 0.18,
-        ),
-        gridPaint,
-      );
+    for (var i = 1; i < 4; i++) {
+      final y = size.height * i / 4;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    }
+
+    final landPaint = Paint()
+      ..color = const Color(0xFF38B77B).withOpacity(0.42);
+    final landBorder = Paint()
+      ..color = Colors.white.withOpacity(0.14)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    for (final land in _flatLandMasses(size)) {
+      canvas.drawPath(land, landPaint);
+      canvas.drawPath(land, landBorder);
     }
 
     final from = draft.fromCountry;
@@ -691,7 +694,7 @@ class _GlobePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _GlobePainter oldDelegate) {
+  bool shouldRepaint(covariant _FlatMapPainter oldDelegate) {
     return oldDelegate.draft != draft || oldDelegate.progress != progress;
   }
 }
@@ -772,8 +775,8 @@ class _ProgressCard extends StatelessWidget {
   }
 }
 
-class _GlobeRouteCard extends StatelessWidget {
-  const _GlobeRouteCard({
+class _MapRouteCard extends StatelessWidget {
+  const _MapRouteCard({
     required this.route,
     required this.executing,
     required this.onCreateTransfer,
@@ -1075,9 +1078,74 @@ class SuccessAuroraOverlay extends StatelessWidget {
 }
 
 Offset _projectCountry(TransferCountry country, Size size) {
-  final center = Offset(size.width / 2, size.height / 2);
-  final radius = math.min(size.width, size.height) * 0.44;
-  final x = center.dx + (country.longitude / 180) * radius * 0.92;
-  final y = center.dy - (country.latitude / 90) * radius * 0.86;
+  final padding = math.min(size.width, size.height) * 0.08;
+  final x =
+      padding + ((country.longitude + 180) / 360) * (size.width - padding * 2);
+  final y =
+      padding + ((90 - country.latitude) / 180) * (size.height - padding * 2);
   return Offset(x, y);
+}
+
+List<Path> _flatLandMasses(Size size) {
+  Offset p(double x, double y) => Offset(size.width * x, size.height * y);
+
+  return [
+    Path()
+      ..moveTo(p(0.06, 0.38).dx, p(0.06, 0.38).dy)
+      ..quadraticBezierTo(
+        p(0.12, 0.22).dx,
+        p(0.12, 0.22).dy,
+        p(0.25, 0.25).dx,
+        p(0.25, 0.25).dy,
+      )
+      ..quadraticBezierTo(
+        p(0.36, 0.32).dx,
+        p(0.36, 0.32).dy,
+        p(0.31, 0.48).dx,
+        p(0.31, 0.48).dy,
+      )
+      ..quadraticBezierTo(
+        p(0.21, 0.63).dx,
+        p(0.21, 0.63).dy,
+        p(0.09, 0.55).dx,
+        p(0.09, 0.55).dy,
+      )
+      ..close(),
+    Path()
+      ..moveTo(p(0.43, 0.28).dx, p(0.43, 0.28).dy)
+      ..quadraticBezierTo(
+        p(0.55, 0.16).dx,
+        p(0.55, 0.16).dy,
+        p(0.69, 0.28).dx,
+        p(0.69, 0.28).dy,
+      )
+      ..quadraticBezierTo(
+        p(0.77, 0.39).dx,
+        p(0.77, 0.39).dy,
+        p(0.67, 0.55).dx,
+        p(0.67, 0.55).dy,
+      )
+      ..quadraticBezierTo(
+        p(0.56, 0.68).dx,
+        p(0.56, 0.68).dy,
+        p(0.44, 0.54).dx,
+        p(0.44, 0.54).dy,
+      )
+      ..close(),
+    Path()
+      ..moveTo(p(0.78, 0.42).dx, p(0.78, 0.42).dy)
+      ..quadraticBezierTo(
+        p(0.87, 0.34).dx,
+        p(0.87, 0.34).dy,
+        p(0.94, 0.46).dx,
+        p(0.94, 0.46).dy,
+      )
+      ..quadraticBezierTo(
+        p(0.91, 0.62).dx,
+        p(0.91, 0.62).dy,
+        p(0.79, 0.58).dx,
+        p(0.79, 0.58).dy,
+      )
+      ..close(),
+  ];
 }
