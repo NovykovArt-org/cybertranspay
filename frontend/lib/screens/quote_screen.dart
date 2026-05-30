@@ -178,119 +178,199 @@ class _QuoteScreenState extends State<QuoteScreen> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: ListView(
+      child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Маршрутизация',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
+        child: Column(
+          children: [
+            _QuoteHeader(apiHealthy: _apiHealthy),
+            const SizedBox(height: 16),
+            _QuoteForm(
+              fromController: _fromController,
+              toController: _toController,
+              amountController: _amountController,
+              preference: _preference,
+              loading: _loading,
+              error: _error,
+              onPreferenceChanged: (value) =>
+                  setState(() => _preference = value),
+              onSubmit: _fetchQuote,
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: ListView(
+                children: [
+                  if (_routes.isEmpty && !_loading && _error == null)
+                    const Text(
+                      'Выберите пару активов и запросите котировку маршрута.',
+                    ),
+                  if (_lastQuote != null) _QuoteSummary(_lastQuote!),
+                  if (_transferError != null) ...[
+                    Text(
+                      _transferError!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (_lastTransfer != null) ...[
+                    _TransferReceipt(
+                      _lastTransfer!,
+                      refreshing: _refreshingTransfer,
+                      statusMessage: _transferStatusMessage,
+                      onRefresh:
+                          _refreshingTransfer ? null : _refreshTransferStatus,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  ..._routes.map(
+                    (route) => _RouteCard(
+                      route,
+                      executing: _executingRouteId == route.routeId,
+                      transferCreated: _lastTransfer != null,
+                      onCreateTransfer:
+                          _executingRouteId == null && _lastTransfer == null
+                              ? () => _createTransfer(route)
+                              : null,
+                    ),
+                  ),
+                ],
               ),
-              Icon(
-                _apiHealthy == true
-                    ? Icons.cloud_done
-                    : _apiHealthy == false
-                        ? Icons.cloud_off
-                        : Icons.cloud_queue,
-                color: _apiHealthy == true ? Colors.green : Colors.orange,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _fromController,
-            decoration: const InputDecoration(labelText: 'От (актив)'),
-            textCapitalization: TextCapitalization.characters,
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _toController,
-            decoration: const InputDecoration(labelText: 'К (актив)'),
-            textCapitalization: TextCapitalization.characters,
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _amountController,
-            decoration: const InputDecoration(labelText: 'Сумма'),
-            keyboardType: TextInputType.number,
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            value: _preference,
-            decoration: const InputDecoration(labelText: 'Приоритет'),
-            items: const [
-              DropdownMenuItem(value: 'cheapest', child: Text('Дешевле')),
-              DropdownMenuItem(value: 'fastest', child: Text('Быстрее')),
-              DropdownMenuItem(value: 'compliant', child: Text('Compliance')),
-            ],
-            onChanged: (v) => setState(() => _preference = v ?? 'cheapest'),
-          ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: _loading ? null : _fetchQuote,
-            icon: _loading
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.route),
-            label: const Text('Подобрать маршрут'),
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: 12),
-            Text(_error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            ),
           ],
-          const SizedBox(height: 20),
-          if (_routes.isEmpty && !_loading && _error == null)
-            const Text('Выберите пару активов и запросите котировку маршрута.'),
-          if (_lastQuote != null) ...[
-            Text(
-              'Quote: ${_lastQuote!.quoteId} · expires: '
-              '${_lastQuote!.expiresAt.toLocal().toIso8601String().substring(0, 16)}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Курс: ${_lastQuote!.spotRate.toStringAsFixed(4)} (${_lastQuote!.rateSource})'
-              '${_lastQuote!.livePricing ? ' · live' : ''}',
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
-            const SizedBox(height: 8),
-          ],
-          if (_transferError != null) ...[
-            Text(
-              _transferError!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-            const SizedBox(height: 8),
-          ],
-          if (_lastTransfer != null) ...[
-            _TransferReceipt(
-              _lastTransfer!,
-              refreshing: _refreshingTransfer,
-              statusMessage: _transferStatusMessage,
-              onRefresh: _refreshingTransfer ? null : _refreshTransferStatus,
-            ),
-            const SizedBox(height: 12),
-          ],
-          ..._routes.map(
-            (route) => _RouteCard(
-              route,
-              executing: _executingRouteId == route.routeId,
-              transferCreated: _lastTransfer != null,
-              onCreateTransfer:
-                  _executingRouteId == null && _lastTransfer == null
-                      ? () => _createTransfer(route)
-                      : null,
-            ),
-          ),
-        ],
+        ),
       ),
+    );
+  }
+}
+
+class _QuoteHeader extends StatelessWidget {
+  const _QuoteHeader({required this.apiHealthy});
+
+  final bool? apiHealthy;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            'Маршрутизация',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+        ),
+        Icon(
+          apiHealthy == true
+              ? Icons.cloud_done
+              : apiHealthy == false
+                  ? Icons.cloud_off
+                  : Icons.cloud_queue,
+          color: apiHealthy == true ? Colors.green : Colors.orange,
+        ),
+      ],
+    );
+  }
+}
+
+class _QuoteForm extends StatelessWidget {
+  const _QuoteForm({
+    required this.fromController,
+    required this.toController,
+    required this.amountController,
+    required this.preference,
+    required this.loading,
+    required this.error,
+    required this.onPreferenceChanged,
+    required this.onSubmit,
+  });
+
+  final TextEditingController fromController;
+  final TextEditingController toController;
+  final TextEditingController amountController;
+  final String preference;
+  final bool loading;
+  final String? error;
+  final ValueChanged<String> onPreferenceChanged;
+  final VoidCallback onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: fromController,
+          decoration: const InputDecoration(labelText: 'От (актив)'),
+          textCapitalization: TextCapitalization.characters,
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: toController,
+          decoration: const InputDecoration(labelText: 'К (актив)'),
+          textCapitalization: TextCapitalization.characters,
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: amountController,
+          decoration: const InputDecoration(labelText: 'Сумма'),
+          keyboardType: TextInputType.number,
+        ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          value: preference,
+          decoration: const InputDecoration(labelText: 'Приоритет'),
+          items: const [
+            DropdownMenuItem(value: 'cheapest', child: Text('Дешевле')),
+            DropdownMenuItem(value: 'fastest', child: Text('Быстрее')),
+            DropdownMenuItem(value: 'compliant', child: Text('Compliance')),
+          ],
+          onChanged: (value) => onPreferenceChanged(value ?? 'cheapest'),
+        ),
+        const SizedBox(height: 16),
+        FilledButton.icon(
+          onPressed: loading ? null : onSubmit,
+          icon: loading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.route),
+          label: const Text('Подобрать маршрут'),
+        ),
+        if (error != null) ...[
+          const SizedBox(height: 12),
+          Text(error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error)),
+        ],
+      ],
+    );
+  }
+}
+
+class _QuoteSummary extends StatelessWidget {
+  const _QuoteSummary(this.quote);
+
+  final QuoteResponse quote;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quote: ${quote.quoteId} · expires: '
+          '${quote.expiresAt.toLocal().toIso8601String().substring(0, 16)}',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Курс: ${quote.spotRate.toStringAsFixed(4)} (${quote.rateSource})'
+          '${quote.livePricing ? ' · live' : ''}',
+          style: Theme.of(context).textTheme.labelLarge,
+        ),
+        const SizedBox(height: 8),
+      ],
     );
   }
 }
@@ -381,7 +461,7 @@ class _TransferReceipt extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 6),
             Text('ID: ${transfer.transferId}'),
-            Text('Статус: ${transfer.status}'),
+            _StatusBadge(status: transfer.status),
             Text('Маршрут: ${transfer.routeId}'),
             Text(
               'Сумма: ${transfer.amount.toStringAsFixed(2)} '
@@ -405,6 +485,43 @@ class _TransferReceipt extends StatelessWidget {
               Text(statusMessage!),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.status});
+
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final color = switch (status) {
+      'completed' => Colors.green,
+      'processing' => Colors.blue,
+      'pending' => Colors.orange,
+      'failed' => colorScheme.error,
+      _ => colorScheme.outline,
+    };
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: color.withOpacity(0.35)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          child: Text(
+            'Статус: $status',
+            style:
+                Theme.of(context).textTheme.labelMedium?.copyWith(color: color),
+          ),
         ),
       ),
     );
