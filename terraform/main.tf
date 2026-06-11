@@ -43,11 +43,13 @@ module "cloud_run" {
   project_id = var.project_id
   region     = var.region
 
-  service_account_email = module.iam.service_account_email
-  image_tag             = var.routing_engine_image_tag
-  allow_unauthenticated = var.allow_public_routing_api
-  auth_required         = var.auth_required
-  api_keys_secret_id    = module.secrets.api_keys_secret_id
+  service_account_email   = module.iam.service_account_email
+  image_tag               = var.routing_engine_image_tag
+  allow_unauthenticated   = var.allow_public_routing_api
+  auth_required           = var.auth_required
+  api_keys_secret_id      = module.secrets.api_keys_secret_id
+  enable_persistence      = var.enable_routing_engine_persistence
+  persistence_bucket_name = var.routing_engine_persistence_bucket_name
 
   depends_on = [module.artifact_registry, module.iam, module.project_apis, module.secrets]
 }
